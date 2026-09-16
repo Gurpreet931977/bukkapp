@@ -1,0 +1,365 @@
+'use client';
+
+import React, { useState } from 'react';
+import { SearchFilters } from '@/types';
+import { INITIAL_CATEGORIES, DEHRADUN_NEIGHBORHOODS } from '@/lib/seed/data';
+import { Filter, Check, SlidersHorizontal, RotateCcw, X, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+
+interface FilterBarProps {
+  filters: SearchFilters;
+  onChange: (newFilters: SearchFilters) => void;
+  onReset: () => void;
+  resultCount: number;
+}
+
+export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBarProps) {
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const categories = [{ id: 'all', name: 'All Categories' }, ...INITIAL_CATEGORIES];
+
+  const timePeriods: { label: string; value: SearchFilters['timePeriod'] }[] = [
+    { label: 'Any Time', value: undefined },
+    { label: 'Morning (Before 12 PM)', value: 'morning' },
+    { label: 'Afternoon (12 PM - 5 PM)', value: 'afternoon' },
+    { label: 'Evening (After 5 PM)', value: 'evening' },
+  ];
+
+  const sortOptions = [
+    { label: 'Recommended', value: 'recommended' },
+    { label: 'Highest Rated', value: 'highest_rated' },
+    { label: 'Lowest Price', value: 'lowest_price' },
+    { label: 'Nearest to You', value: 'nearest' },
+  ];
+
+  const handleCategoryChange = (catId: string) => {
+    onChange({ ...filters, category: catId === 'all' ? undefined : catId });
+  };
+
+  const handleNeighborhoodChange = (neighborhood: string) => {
+    onChange({ ...filters, neighborhood: neighborhood === 'All Areas' ? undefined : neighborhood });
+  };
+
+  const handleVerifiedToggle = () => {
+    onChange({ ...filters, verifiedOnly: !filters.verifiedOnly });
+  };
+
+  const handleSortChange = (sortBy: SearchFilters['sortBy']) => {
+    onChange({ ...filters, sortBy });
+  };
+
+  const activeFilterCount = [
+    Boolean(filters.category),
+    Boolean(filters.neighborhood),
+    Boolean(filters.verifiedOnly),
+    Boolean(filters.timePeriod),
+    Boolean(filters.maxPrice),
+    Boolean(filters.date),
+  ].filter(Boolean).length;
+
+  return (
+    <>
+      <div className="bg-white rounded-2xl border border-brand-border/80 p-3.5 sm:p-5 shadow-subtle space-y-3 sm:space-y-4">
+        {/* Top Filter Controls: Horizontal Scrollable Category Pills */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full no-scrollbar">
+            {categories.map((cat) => {
+              const isSelected = (!filters.category && cat.id === 'all') || filters.category === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => handleCategoryChange(cat.id)}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap transition-all tap-target ${
+                    isSelected
+                      ? 'bg-brand-black text-white shadow-xs'
+                      : 'bg-brand-surface-alt hover:bg-[#EBEBE5] text-brand-secondary hover:text-brand-black'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Mobile Filter Sheet Trigger Button */}
+          <button
+            onClick={() => setIsMobileDrawerOpen(true)}
+            className="sm:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-black text-white text-xs font-bold shrink-0 tap-target shadow-subtle"
+            aria-label="Open search filters"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="w-4 h-4 rounded-full bg-brand-lime text-brand-black text-[10px] font-black flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Desktop Filter Controls Grid */}
+        <div className="hidden sm:grid pt-3 border-t border-brand-border/60 grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Neighborhood Selector */}
+          <div>
+            <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider block mb-1">
+              Neighborhood
+            </label>
+            <select
+              value={filters.neighborhood || 'All Areas'}
+              onChange={(e) => handleNeighborhoodChange(e.target.value)}
+              className="w-full text-xs font-semibold text-brand-black bg-brand-surface-alt border border-brand-border rounded-xl px-3 py-2 focus:outline-hidden focus:border-brand-black"
+            >
+              {DEHRADUN_NEIGHBORHOODS.map((hood) => (
+                <option key={hood} value={hood}>
+                  {hood}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Time of Day */}
+          <div>
+            <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider block mb-1">
+              Time Slot
+            </label>
+            <select
+              value={filters.timePeriod || 'all'}
+              onChange={(e) => onChange({ ...filters, timePeriod: e.target.value as any })}
+              className="w-full text-xs font-semibold text-brand-black bg-brand-surface-alt border border-brand-border rounded-xl px-3 py-2 focus:outline-hidden focus:border-brand-black"
+            >
+              {timePeriods.map((tp) => (
+                <option key={tp.label} value={tp.value}>
+                  {tp.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort By */}
+          <div>
+            <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider block mb-1">
+              Sort Order
+            </label>
+            <select
+              value={filters.sortBy || 'recommended'}
+              onChange={(e) => handleSortChange(e.target.value as any)}
+              className="w-full text-xs font-semibold text-brand-black bg-brand-surface-alt border border-brand-border rounded-xl px-3 py-2 focus:outline-hidden focus:border-brand-black"
+            >
+              {sortOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Verified Only Toggle */}
+          <div className="flex items-end">
+            <button
+              onClick={handleVerifiedToggle}
+              className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                filters.verifiedOnly
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  : 'bg-brand-surface-alt text-brand-secondary border-brand-border hover:bg-[#EBEBE5]'
+              }`}
+            >
+              <span
+                className={`w-4 h-4 rounded-md flex items-center justify-center border ${
+                  filters.verifiedOnly ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-neutral-300 bg-white'
+                }`}
+              >
+                {filters.verifiedOnly && <Check className="w-3 h-3" />}
+              </span>
+              <span>Verified Only</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Reset button if active */}
+        {activeFilterCount > 0 && (
+          <div className="pt-2 flex justify-end">
+            <button
+              onClick={onReset}
+              className="text-xs font-bold text-neutral-500 hover:text-brand-black flex items-center gap-1 shrink-0 px-2 py-1 rounded-md hover:bg-brand-surface-alt"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset all filters</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* MOBILE FILTER BOTTOM SHEET / DRAWER */}
+      {isMobileDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs sm:hidden">
+          <div
+            className="absolute inset-0"
+            onClick={() => setIsMobileDrawerOpen(false)}
+          />
+
+          <div className="relative w-full max-h-[85vh] bg-white rounded-t-3xl border-t border-brand-border flex flex-col shadow-modal animate-slide-up overflow-hidden">
+            {/* Drawer Header */}
+            <div className="p-4 border-b border-brand-border/70 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-brand-black" />
+                <h3 className="font-extrabold text-base text-brand-black">Filters & Sorting</h3>
+                {activeFilterCount > 0 && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-lime text-brand-black">
+                    {activeFilterCount} active
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setIsMobileDrawerOpen(false)}
+                className="w-8 h-8 rounded-full bg-brand-surface-alt flex items-center justify-center text-neutral-500 hover:text-brand-black tap-target"
+                aria-label="Close filters"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Drawer Body Scrollable */}
+            <div className="p-5 overflow-y-auto space-y-5">
+              {/* Category */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-brand-muted block">
+                  Category
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {categories.map((cat) => {
+                    const isSelected = (!filters.category && cat.id === 'all') || filters.category === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => handleCategoryChange(cat.id)}
+                        className={`text-xs font-bold p-2.5 rounded-xl border text-left truncate transition-all ${
+                          isSelected
+                            ? 'bg-brand-black text-white border-brand-black'
+                            : 'bg-brand-surface-alt text-brand-black border-brand-border'
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Neighborhood */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-brand-muted block">
+                  Neighborhood (Dehradun)
+                </label>
+                <select
+                  value={filters.neighborhood || 'All Areas'}
+                  onChange={(e) => handleNeighborhoodChange(e.target.value)}
+                  className="w-full text-sm font-semibold text-brand-black bg-brand-surface-alt border border-brand-border rounded-xl p-3 focus:outline-hidden"
+                >
+                  {DEHRADUN_NEIGHBORHOODS.map((hood) => (
+                    <option key={hood} value={hood}>
+                      {hood}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Time of Day */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-brand-muted block">
+                  Time Slot
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {timePeriods.map((tp) => {
+                    const isSelected = filters.timePeriod === tp.value || (!filters.timePeriod && tp.value === undefined);
+                    return (
+                      <button
+                        key={tp.label}
+                        onClick={() => onChange({ ...filters, timePeriod: tp.value })}
+                        className={`text-xs font-bold p-2.5 rounded-xl border text-left transition-all ${
+                          isSelected
+                            ? 'bg-brand-black text-white border-brand-black'
+                            : 'bg-brand-surface-alt text-brand-black border-brand-border'
+                        }`}
+                      >
+                        {tp.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Sort Order */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-brand-muted block">
+                  Sort By
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {sortOptions.map((opt) => {
+                    const isSelected = (filters.sortBy || 'recommended') === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => handleSortChange(opt.value as any)}
+                        className={`text-xs font-bold p-2.5 rounded-xl border text-left transition-all ${
+                          isSelected
+                            ? 'bg-brand-black text-white border-brand-black'
+                            : 'bg-brand-surface-alt text-brand-black border-brand-border'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Verified Filter */}
+              <div className="pt-2">
+                <button
+                  onClick={handleVerifiedToggle}
+                  className={`w-full flex items-center justify-between p-3.5 rounded-xl text-xs font-bold border transition-all ${
+                    filters.verifiedOnly
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                      : 'bg-brand-surface-alt text-brand-secondary border-brand-border'
+                  }`}
+                >
+                  <span>Verified Spots Only</span>
+                  <span
+                    className={`w-5 h-5 rounded-md flex items-center justify-center border ${
+                      filters.verifiedOnly ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-neutral-300 bg-white'
+                    }`}
+                  >
+                    {filters.verifiedOnly && <Check className="w-3.5 h-3.5" />}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Sticky Action Footer */}
+            <div className="p-4 border-t border-brand-border/70 bg-white flex items-center gap-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={() => {
+                    onReset();
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className="px-4 py-3 rounded-xl border border-brand-border text-xs font-bold text-neutral-600 hover:text-brand-black"
+                >
+                  Reset
+                </button>
+              )}
+              <Button
+                variant="accent"
+                size="md"
+                onClick={() => setIsMobileDrawerOpen(false)}
+                className="flex-1 font-black text-xs py-3.5 bg-brand-lime text-brand-black rounded-xl btn-press"
+              >
+                <span>Show {resultCount} {resultCount === 1 ? 'Spot' : 'Spots'}</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
