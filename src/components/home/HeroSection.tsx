@@ -215,7 +215,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
             onClick={() => setIsPassModalOpen(true)}
             className="group block text-left animate-float-left bg-white/95 backdrop-blur-2xl border border-neutral-200/90 hover:border-brand-black shadow-[0_12px_36px_rgba(0,0,0,0.06)] hover:shadow-[0_24px_48px_rgba(0,0,0,0.12),0_0_24px_rgba(199,243,107,0.3)] rounded-2xl p-4 w-68 2xl:w-72 transition-all duration-300 hover:-translate-y-1.5 select-none cursor-pointer"
           >
-            {/* Header: Live Confirmed Radar Pill + Monospace Ref */}
+            {/* Header: Live Confirmed Radar Pill + Rating */}
             <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-neutral-100">
               <div className="flex items-center gap-1.5">
                 <span className="relative flex h-2 w-2">
@@ -226,8 +226,10 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                   Confirmed 2m ago
                 </span>
               </div>
-              <span className="text-[10px] font-mono font-bold text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded">
-                #BK-9241
+              <span className="text-[10px] font-bold text-amber-900 flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/80">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                <span>4.9</span>
+                <span className="text-neutral-400 font-normal">(184)</span>
               </span>
             </div>
 
@@ -283,11 +285,14 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
             onClick={() => router.push('/business/the-groom-room')}
             className="group block text-left animate-float-right bg-white/95 backdrop-blur-2xl border border-neutral-200/90 hover:border-brand-black shadow-[0_12px_36px_rgba(0,0,0,0.06)] hover:shadow-[0_24px_48px_rgba(0,0,0,0.12),0_0_24px_rgba(199,243,107,0.3)] rounded-2xl p-4 w-68 2xl:w-72 transition-all duration-300 hover:-translate-y-1.5 select-none cursor-pointer"
           >
-            {/* Header: Next Open Slot + Rating (No star icon) */}
+            {/* Header: Next Open Slot Radar Pill + Rating */}
             <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-neutral-100">
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-brand-lime live-pulse-dot" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-neutral-800">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
                   Next Open Slot
                 </span>
               </div>
@@ -315,7 +320,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                   <h4 className="text-xs font-black text-brand-black truncate">The Groom Room</h4>
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                 </div>
-                <p className="text-[11px] font-bold text-emerald-600 mt-0.5">Today at 4:30 PM</p>
+                <p className="text-[11px] font-semibold text-neutral-700 mt-0.5">Today at 4:30 PM</p>
                 <p className="text-[10px] text-neutral-400 flex items-center gap-1 mt-0.5">
                   <MapPin className="w-2.5 h-2.5 text-neutral-400 shrink-0" />
                   <span>Ballupur, Dehradun</span>
