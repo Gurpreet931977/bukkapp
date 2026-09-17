@@ -4,6 +4,7 @@ import { AdminService } from '../lib/services/adminService';
 import { SearchIntentParser } from '../lib/search/intentParser';
 import { INITIAL_BUSINESSES, INITIAL_SERVICES } from '../lib/seed/data';
 import { Business, Service, Booking } from '../types';
+import { store } from '../lib/db/store';
 
 let passed = 0;
 let failed = 0;
@@ -127,6 +128,17 @@ async function runTestSuite() {
     { approvedBy: 'Lead Ops' }
   );
   assert(audit.action === 'business_approved' && audit.entityId === zenith.id, 'Creates immutable audit log record');
+
+  console.log('\n--- 7. VERIFIED MERCHANT SUBSCRIPTION ENGINE ---');
+  const activatedBiz = store.activateVerificationSubscription(zenith.id);
+  assert(activatedBiz.verified === true, 'Activation sets verified = true');
+  assert(activatedBiz.verificationPlan?.status === 'free_trial', 'Starts on free_trial status');
+  assert(activatedBiz.verificationPlan?.price === 450, 'Enforces ₹450 price point');
+  assert(Boolean(activatedBiz.verificationPlan?.trialEndsAt), 'Calculates 30-day trial expiry date');
+
+  const cancelledBiz = store.cancelVerificationSubscription(zenith.id);
+  assert(cancelledBiz.verified === false, 'Cancellation unsets verified = false');
+  assert(cancelledBiz.verificationPlan?.status === 'cancelled', 'Sets status to cancelled');
 
   console.log('\n====================================================');
   console.log(`FUNCTIONAL SUITE RESULTS: ${passed} PASSED, ${failed} FAILED`);

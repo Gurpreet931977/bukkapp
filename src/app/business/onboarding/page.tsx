@@ -51,6 +51,7 @@ export default function BusinessOnboardingPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [wantsVerification, setWantsVerification] = useState(true);
 
   // Restore draft on mount
   useEffect(() => {
@@ -225,6 +226,11 @@ export default function BusinessOnboardingPage() {
       durationMinutes: parseInt(serviceDuration, 10) || 45,
       active: true,
     });
+
+    // If opted in, activate 30-day free trial for verification
+    if (wantsVerification) {
+      store.activateVerificationSubscription(newBiz.id);
+    }
 
     // Switch current user's business ID
     const u = store.getCurrentUser();
@@ -560,7 +566,15 @@ export default function BusinessOnboardingPage() {
                 <div className="flex items-start gap-4">
                   <img src={coverImage} alt="Cover" className="w-16 h-16 rounded-xl object-cover" />
                   <div>
-                    <h3 className="text-lg font-black text-brand-black">{name || 'Your Business Name'}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-black text-brand-black">{name || 'Your Business Name'}</h3>
+                      {wantsVerification && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-brand-black text-brand-lime shadow-2xs">
+                          <CheckCircle2 className="w-3 h-3 text-brand-lime" />
+                          <span>Verified</span>
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-brand-secondary">{subcategory || 'Service'} • {neighborhood}, Dehradun</p>
                     <p className="text-xs font-bold text-brand-black mt-1">
                       {serviceName} · {formatPrice(parseInt(servicePrice, 10) || 500)} ({serviceDuration}m)
@@ -570,6 +584,44 @@ export default function BusinessOnboardingPage() {
 
                 <div className="p-3 rounded-xl bg-white border border-brand-border text-xs text-brand-secondary">
                   Open daily: {openTime} to {closeTime}
+                </div>
+              </div>
+
+              {/* BUKKAPP Verified Merchant Plan Opt-in */}
+              <div
+                onClick={() => setWantsVerification(!wantsVerification)}
+                className={`p-5 rounded-2xl border transition-all cursor-pointer select-none flex items-start gap-3.5 ${
+                  wantsVerification
+                    ? 'bg-gradient-to-r from-neutral-900 to-brand-black text-white border-neutral-800 shadow-md'
+                    : 'bg-white text-brand-black border-brand-border hover:border-neutral-400'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={wantsVerification}
+                  onChange={(e) => setWantsVerification(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded text-brand-lime accent-brand-lime shrink-0 cursor-pointer"
+                />
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-black">
+                      Get BUKKAPP Verified Merchant Badge
+                    </span>
+                    <span
+                      className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                        wantsVerification ? 'bg-brand-lime text-brand-black' : 'bg-brand-surface-alt text-brand-secondary'
+                      }`}
+                    >
+                      1st Month FREE (Then ₹450/month)
+                    </span>
+                  </div>
+                  <p
+                    className={`text-[11px] leading-relaxed ${
+                      wantsVerification ? 'text-neutral-300' : 'text-brand-secondary'
+                    }`}
+                  >
+                    Display the official black-and-lime Verified trust badge across search and your profile. Gain 3x booking visibility in {neighborhood}. First 30 days are 100% free (₹0 today, cancel anytime in settings).
+                  </p>
                 </div>
               </div>
             </div>

@@ -377,7 +377,18 @@ export default function AdminConsolePage() {
                               className="w-9 h-9 rounded-xl object-cover border border-brand-border shrink-0"
                             />
                             <div>
-                              <p className="font-extrabold text-brand-black">{b.name}</p>
+                              <div className="flex items-center gap-1.5">
+                                <p className="font-extrabold text-brand-black">{b.name}</p>
+                                {b.verified && (
+                                  <span
+                                    className="inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-brand-black text-brand-lime shadow-2xs"
+                                    title={b.verificationPlan?.status === 'free_trial' ? '30-Day Free Trial Active' : 'Paid Subscription Active (₹450/mo)'}
+                                  >
+                                    <CheckCircle2 className="w-2.5 h-2.5 text-brand-lime" />
+                                    <span>{b.verificationPlan?.status === 'free_trial' ? 'Free Trial' : '₹450/mo'}</span>
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-[11px] text-neutral-400">{b.phone}</p>
                             </div>
                           </div>
@@ -408,6 +419,30 @@ export default function AdminConsolePage() {
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            {b.verified ? (
+                              <button
+                                onClick={() => {
+                                  store.cancelVerificationSubscription(b.id);
+                                  refreshData();
+                                }}
+                                className="text-[10px] font-bold px-2 py-1 rounded-lg text-neutral-600 hover:bg-neutral-100 border border-neutral-200"
+                                title="Revoke Verified Merchant subscription"
+                              >
+                                Revoke Verify
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  store.activateVerificationSubscription(b.id);
+                                  refreshData();
+                                }}
+                                className="text-[10px] font-bold px-2 py-1 rounded-lg bg-brand-lime text-brand-black hover:bg-[#cbf000] border border-brand-black/10"
+                                title="Activate 30-Day Free Trial (₹450/mo afterwards)"
+                              >
+                                + Verify (Trial)
+                              </button>
+                            )}
+
                             {b.status === 'pending_review' && (
                               <>
                                 <button

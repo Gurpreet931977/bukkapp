@@ -428,6 +428,102 @@ class DataStore {
     return updated;
   }
 
+  public activateVerificationSubscription(businessId: string): Business {
+    const idx = this.businesses.findIndex((b) => b.id === businessId);
+    if (idx === -1) throw new Error('Business not found');
+
+    const biz = this.businesses[idx];
+    const trialEnds = new Date();
+    trialEnds.setDate(trialEnds.getDate() + 30);
+
+    const updated: Business = {
+      ...biz,
+      verified: true,
+      verificationPlan: {
+        status: 'free_trial',
+        trialEndsAt: trialEnds.toISOString(),
+        price: 450,
+        currency: 'INR',
+        billingPeriod: 'monthly',
+        subscribedAt: new Date().toISOString(),
+      },
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.businesses[idx] = updated;
+    this.persist(STORAGE_KEYS.BUSINESSES, this.businesses);
+
+    this.addNotification(
+      biz.ownerId,
+      'business_approved',
+      'Verified Badge Activated! (30-Day Free Trial)',
+      `Congratulations! ${biz.name} is now a Verified Merchant on BUKKAPP. Your 30-day free trial has started (₹450/month afterwards).`,
+      biz.id,
+      '/business/dashboard'
+    );
+
+    this.auditLogs.unshift(
+      AdminService.createAuditLog(
+        this.currentUser.id,
+        this.currentUser.name,
+        'verification_subscription_activated',
+        'business',
+        biz.id,
+        { price: 450, billingPeriod: 'monthly', trialDays: 30, trialEndsAt: trialEnds.toISOString() }
+      )
+    );
+    this.persist(STORAGE_KEYS.AUDIT_LOGS, this.auditLogs);
+
+    this.notify();
+    return updated;
+  }
+
+  public cancelVerificationSubscription(businessId: string): Business {
+    const idx = this.businesses.findIndex((b) => b.id === businessId);
+    if (idx === -1) throw new Error('Business not found');
+
+    const biz = this.businesses[idx];
+    const updated: Business = {
+      ...biz,
+      verified: false,
+      verificationPlan: {
+        status: 'cancelled',
+        price: 450,
+        currency: 'INR',
+        billingPeriod: 'monthly',
+        cancelledAt: new Date().toISOString(),
+      },
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.businesses[idx] = updated;
+    this.persist(STORAGE_KEYS.BUSINESSES, this.businesses);
+
+    this.addNotification(
+      biz.ownerId,
+      'changes_requested',
+      'Verified Subscription Cancelled',
+      `The Verified Badge for ${biz.name} has been paused. You can reactivate anytime.`,
+      biz.id,
+      '/business/settings'
+    );
+
+    this.auditLogs.unshift(
+      AdminService.createAuditLog(
+        this.currentUser.id,
+        this.currentUser.name,
+        'verification_subscription_cancelled',
+        'business',
+        biz.id,
+        { price: 450 }
+      )
+    );
+    this.persist(STORAGE_KEYS.AUDIT_LOGS, this.auditLogs);
+
+    this.notify();
+    return updated;
+  }
+
   // ==========================================
   // SERVICES
   // ==========================================

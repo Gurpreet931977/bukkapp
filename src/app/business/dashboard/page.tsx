@@ -167,7 +167,7 @@ export default function BusinessDashboardPage() {
               className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-brand-border shrink-0"
             />
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-brand-muted uppercase tracking-wider">
                   {business.subcategory}
                 </span>
@@ -182,6 +182,12 @@ export default function BusinessDashboardPage() {
                 >
                   {business.status === 'active' ? 'Live & Bookable' : business.status.replace('_', ' ')}
                 </span>
+                {business.verified && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-brand-black text-brand-lime shadow-2xs">
+                    <CheckCircle2 className="w-3 h-3 text-brand-lime" />
+                    <span>Verified Merchant</span>
+                  </span>
+                )}
               </div>
               <h1 className="text-2xl sm:text-3xl font-black text-brand-black tracking-tight">
                 {business.name}
@@ -273,6 +279,82 @@ export default function BusinessDashboardPage() {
             </div>
           );
         })()}
+
+        {/* BUKKAPP VERIFIED MERCHANT SUBSCRIPTION BANNER */}
+        <div className="p-6 rounded-3xl bg-gradient-to-r from-neutral-900 via-brand-black to-neutral-900 text-white shadow-lg border border-neutral-800 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-72 h-72 bg-brand-lime/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-xl">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-brand-lime/20 border border-brand-lime/30 text-brand-lime text-[11px] font-black uppercase tracking-wider">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-brand-lime" />
+                  <span>{business.verified ? 'Verified Merchant Active' : 'Official Verification'}</span>
+                </span>
+                {business.verified && business.verificationPlan?.status === 'free_trial' && (
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider bg-white/10 text-neutral-300 px-2.5 py-0.5 rounded-full border border-white/10">
+                    30-Day Free Trial
+                  </span>
+                )}
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                {business.verified
+                  ? 'Your storefront is BUKKAPP Verified'
+                  : 'Upgrade to BUKKAPP Verified Merchant'}
+              </h3>
+              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
+                {business.verified ? (
+                  business.verificationPlan?.status === 'free_trial' ? (
+                    <>
+                      Your 30-day free trial is active (₹0 charged today). Renews at{' '}
+                      <strong className="text-brand-lime">₹450/month</strong> on{' '}
+                      {business.verificationPlan.trialEndsAt
+                        ? formatDatePretty(business.verificationPlan.trialEndsAt.split('T')[0])
+                        : 'next month'}
+                      . Enjoy priority search placement and buyer trust.
+                    </>
+                  ) : (
+                    <>
+                      Active monthly subscription at <strong className="text-brand-lime">₹450/month</strong>. Your verified trust badge gives customers full confidence.
+                    </>
+                  )
+                ) : (
+                  <>
+                    Unlock the official verified trust badge, 3x search boost in {business.neighborhood}, and verified badge on your page. Only{' '}
+                    <strong className="text-brand-lime font-bold">₹450/month</strong> with{' '}
+                    <strong className="text-white underline decoration-brand-lime underline-offset-2">1st month 100% free</strong> (₹0 today).
+                  </>
+                )}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
+              {business.verified ? (
+                <Link href="/business/settings" className="w-full md:w-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full md:w-auto text-xs font-bold bg-white/10 hover:bg-white/20 text-white border-white/20"
+                  >
+                    <span>Manage Subscription</span>
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => {
+                    store.activateVerificationSubscription(business.id);
+                    refreshData();
+                  }}
+                  className="w-full md:w-auto text-xs font-black bg-brand-lime text-brand-black hover:bg-[#cbf000] shadow-[0_4px_20px_rgba(218,255,0,0.35)]"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-brand-black" />
+                  <span>Start 30-Day Free Trial (₹0 Today)</span>
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* GREETING & SUMMARY HEADER */}
         <div>

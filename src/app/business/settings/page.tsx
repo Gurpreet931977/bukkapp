@@ -5,18 +5,22 @@ import { store } from '@/lib/db/store';
 import { Business } from '@/types';
 import { BusinessLayout } from '@/components/business/BusinessLayout';
 import { Button } from '@/components/ui/Button';
+import { formatPrice, formatDatePretty } from '@/lib/utils';
 import {
   Settings,
   Bell,
   Lock,
   AlertTriangle,
   CheckCircle2,
+  ShieldCheck,
+  CreditCard,
 } from 'lucide-react';
 
 export default function BusinessSettingsPage() {
   const [business, setBusiness] = useState<Business | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [verificationFeedback, setVerificationFeedback] = useState<string | null>(null);
 
   const refreshData = () => {
     const user = store.getCurrentUser();
@@ -44,6 +48,20 @@ export default function BusinessSettingsPage() {
     setIsPaused(!newActive);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 2500);
+  };
+
+  const handleActivateVerification = () => {
+    if (!business) return;
+    store.activateVerificationSubscription(business.id);
+    setVerificationFeedback('30-Day Free Trial activated! Your storefront is now verified.');
+    setTimeout(() => setVerificationFeedback(null), 3500);
+  };
+
+  const handleCancelVerification = () => {
+    if (!business) return;
+    store.cancelVerificationSubscription(business.id);
+    setVerificationFeedback('Verified subscription paused. You can reactivate anytime.');
+    setTimeout(() => setVerificationFeedback(null), 3500);
   };
 
   return (
@@ -88,6 +106,108 @@ export default function BusinessSettingsPage() {
               </div>
               <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-brand-black accent-brand-black" />
             </label>
+          </div>
+        </div>
+
+        {/* Verification Feedback Notice */}
+        {verificationFeedback && (
+          <div className="p-4 rounded-2xl bg-brand-black text-brand-lime text-xs font-bold border border-brand-lime/30 shadow-subtle flex items-center gap-2 animate-fade-in">
+            <CheckCircle2 className="w-4 h-4 text-brand-lime shrink-0" />
+            <span>{verificationFeedback}</span>
+          </div>
+        )}
+
+        {/* BUKKAPP Verified Merchant Subscription & Billing */}
+        <div className="bg-white rounded-2xl border border-brand-border p-6 shadow-subtle space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-brand-border">
+            <div>
+              <h2 className="text-sm font-black uppercase tracking-wider text-brand-black flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-brand-black" />
+                <span>BUKKAPP Verified Merchant Subscription</span>
+              </h2>
+              <p className="text-xs text-brand-secondary mt-0.5">
+                Official trust badge, priority placement in search, and verified customer assurance
+              </p>
+            </div>
+            <span
+              className={`text-xs font-extrabold px-3 py-1 rounded-full w-max flex items-center gap-1.5 ${
+                business?.verified
+                  ? 'bg-brand-black text-brand-lime shadow-2xs'
+                  : 'bg-neutral-100 text-neutral-600'
+              }`}
+            >
+              {business?.verified ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-brand-lime" />
+                  <span>
+                    {business.verificationPlan?.status === 'free_trial'
+                      ? 'Free Trial Active'
+                      : 'Verified Active'}
+                  </span>
+                </>
+              ) : (
+                <span>Not Subscribed</span>
+              )}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-brand-surface-alt border border-brand-border space-y-1">
+              <span className="text-[10px] uppercase font-bold text-brand-muted">Monthly Plan</span>
+              <p className="text-lg font-black text-brand-black">₹450 / month</p>
+              <p className="text-[11px] text-brand-secondary">Includes 1st month free trial</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-brand-surface-alt border border-brand-border space-y-1">
+              <span className="text-[10px] uppercase font-bold text-brand-muted">Billing Cycle</span>
+              <p className="text-lg font-black text-brand-black">
+                {business?.verified
+                  ? business.verificationPlan?.status === 'free_trial'
+                    ? '30-Day Free Trial'
+                    : 'Monthly Auto-Renewal'
+                  : 'Pay Monthly'}
+              </p>
+              <p className="text-[11px] text-brand-secondary">
+                {business?.verificationPlan?.trialEndsAt
+                  ? `Trial ends ${formatDatePretty(business.verificationPlan.trialEndsAt.split('T')[0])}`
+                  : 'Cancel or resume anytime'}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-brand-surface-alt border border-brand-border space-y-1">
+              <span className="text-[10px] uppercase font-bold text-brand-muted">Trust Benefits</span>
+              <p className="text-xs font-bold text-brand-black">Verified Checkmark Badge</p>
+              <p className="text-[11px] text-brand-secondary">3x discovery boost in local searches</p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <p className="text-xs text-brand-secondary">
+              {business?.verified
+                ? 'Your storefront is actively enjoying all verified merchant benefits.'
+                : 'Activate now to get your first 30 days completely free (₹0 charged today).'}
+            </p>
+
+            {business?.verified ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelVerification}
+                className="text-xs font-bold text-red-700 border-red-200 hover:bg-red-50 shrink-0"
+              >
+                <span>Cancel Subscription</span>
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleActivateVerification}
+                className="text-xs font-black bg-brand-lime text-brand-black hover:bg-[#cbf000] shrink-0 gap-1.5 shadow-2xs"
+              >
+                <CheckCircle2 className="w-4 h-4 text-brand-black" />
+                <span>Activate Free Trial (₹0 Today)</span>
+              </Button>
+            )}
           </div>
         </div>
 

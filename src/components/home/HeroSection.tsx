@@ -97,27 +97,63 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
-  const [kineticIndex, setKineticIndex] = useState(0);
   const [isPassModalOpen, setIsPassModalOpen] = useState(false);
 
-  // Marquee pause state for category dock
-  const [isDockPaused, setIsDockPaused] = useState(false);
+  // Kinetic Service Typewriter State (Famous typing -> pause -> backspace one by one -> loop)
+  const [typewriterIndex, setTypewriterIndex] = useState(0);
+  const [displayText, setDisplayText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Rotating suggestion carousel (3.6s cadence for relaxed readability)
   useEffect(() => {
-    if (query) return;
-    const interval = setInterval(() => {
-      setSuggestionIndex((prev) => (prev + 1) % ROTATING_SUGGESTIONS.length);
-    }, 3600);
-    return () => clearInterval(interval);
-  }, [query]);
+    const currentFullText = KINETIC_SERVICES[typewriterIndex].name;
+    let timer: NodeJS.Timeout;
 
-  // Kinetic service flipper (cycles every 3.2s)
+    if (!isDeleting) {
+      if (displayText.length < currentFullText.length) {
+        timer = setTimeout(() => {
+          setDisplayText(currentFullText.slice(0, displayText.length + 1));
+        }, 70);
+      } else {
+        timer = setTimeout(() => {
+          setIsDeleting(true);
+        }, 1800);
+      }
+    } else {
+      if (displayText.length > 0) {
+        timer = setTimeout(() => {
+          setDisplayText(currentFullText.slice(0, displayText.length - 1));
+        }, 35);
+      } else {
+        timer = setTimeout(() => {
+          setIsDeleting(false);
+          setTypewriterIndex((prev) => (prev + 1) % KINETIC_SERVICES.length);
+        }, 200);
+      }
+    }
+
+    return () => clearTimeout(timer);
+  }, [displayText, isDeleting, typewriterIndex]);
+
+  // Touch-responsive marquee state for category dock (responsive to touch instead of hover)
+  const [isTouchActive, setIsTouchActive] = useState(false);
+  const touchResumeTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTouchStart = () => {
+    setIsTouchActive(true);
+    if (touchResumeTimerRef.current) clearTimeout(touchResumeTimerRef.current);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchResumeTimerRef.current) clearTimeout(touchResumeTimerRef.current);
+    touchResumeTimerRef.current = setTimeout(() => {
+      setIsTouchActive(false);
+    }, 1800);
+  };
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setKineticIndex((prev) => (prev + 1) % KINETIC_SERVICES.length);
-    }, 3200);
-    return () => clearInterval(timer);
+    return () => {
+      if (touchResumeTimerRef.current) clearTimeout(touchResumeTimerRef.current);
+    };
   }, []);
 
   // Global Keyboard Shortcut: Cmd+K / Ctrl+K
@@ -333,28 +369,27 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
               </span>
             </h1>
 
-            {/* Kinetic Discovery Pill Ticker (Fixed Height, Locked Layout) */}
-            <div className="flex items-center justify-center flex-wrap gap-2.5 text-sm sm:text-base md:text-lg text-brand-secondary font-semibold min-h-[42px]">
+            {/* Minimal Kinetic Discovery Typewriter Ticker */}
+            <div className="flex items-center justify-center flex-wrap gap-2 text-sm sm:text-base text-brand-secondary font-medium min-h-[38px]">
               <span>Real-time availability for</span>
-              <span className="inline-flex items-center min-h-[38px] overflow-visible relative">
+              <span className="inline-flex items-center min-h-[34px] overflow-visible relative">
                 {(() => {
-                  const CurrentIcon = KINETIC_SERVICES[kineticIndex].Icon;
+                  const currentService = KINETIC_SERVICES[typewriterIndex] || KINETIC_SERVICES[0];
+                  const CurrentIcon = currentService.Icon;
                   return (
                     <button
-                      key={kineticIndex}
                       type="button"
-                      onClick={() => handlePromptClick(KINETIC_SERVICES[kineticIndex].name)}
-                      className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-lime text-brand-black font-extrabold text-xs sm:text-sm md:text-base border border-brand-black/20 shadow-[0_4px_18px_rgba(218,255,0,0.55),0_1px_3px_rgba(0,0,0,0.1)] ring-2 ring-brand-lime/50 animate-category-highlight whitespace-nowrap select-none hover:scale-105 hover:shadow-[0_6px_22px_rgba(218,255,0,0.7)] transition-transform cursor-pointer"
-                      title={`Search ${KINETIC_SERVICES[kineticIndex].name}`}
+                      onClick={() => handlePromptClick(currentService.name)}
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/95 backdrop-blur-sm border border-neutral-200/90 shadow-2xs hover:border-brand-black/40 text-xs sm:text-sm font-semibold text-brand-black transition-all cursor-pointer group select-none"
+                      title={`Search ${currentService.name}`}
                     >
-                      <span className="w-5 h-5 sm:w-5.5 sm:h-5.5 rounded-full bg-brand-black text-brand-lime flex items-center justify-center shrink-0 shadow-2xs">
-                        <CurrentIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-brand-lime" />
+                      <span className="w-5 h-5 rounded-full bg-brand-surface-alt flex items-center justify-center shrink-0 border border-neutral-100 group-hover:bg-brand-lime/30 transition-colors">
+                        <CurrentIcon className="w-3 h-3 text-neutral-800" />
                       </span>
-                      <span className="tracking-tight text-brand-black font-black">{KINETIC_SERVICES[kineticIndex].name}</span>
-                      <span className="relative flex h-2 w-2 shrink-0 ml-0.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-black opacity-60" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-black" />
+                      <span className="tracking-tight text-brand-black font-bold">
+                        {displayText}
                       </span>
+                      <span className="inline-block w-[1.5px] h-3.5 bg-brand-black ml-0.5 animate-pulse align-middle" />
                     </button>
                   );
                 })()}
@@ -555,12 +590,13 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
             )}
           </div>
 
-          {/* Visual Category Pill Dock - Automatic Continuous Marquee in Infinite Loop */}
+          {/* Visual Category Pill Dock - Automatic Continuous Marquee in Infinite Loop (Touch Responsive) */}
           <div className="pt-2 w-full max-w-4xl mx-auto flex justify-center px-2 sm:px-4">
             <div
-              className="group/marquee relative w-full max-w-full overflow-hidden rounded-full bg-white/95 backdrop-blur-xl border border-neutral-200/80 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-1.5 cursor-pointer select-none"
-              onMouseEnter={() => setIsDockPaused(true)}
-              onMouseLeave={() => setIsDockPaused(false)}
+              className="relative w-full max-w-full overflow-hidden rounded-full bg-white/95 backdrop-blur-xl border border-neutral-200/80 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-1.5 cursor-pointer select-none"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
             >
               {/* Soft Edge Gradient Fade Masks for seamless entrance/exit */}
               <div className="pointer-events-none absolute left-0 inset-y-0 w-8 sm:w-12 bg-gradient-to-r from-white via-white/80 to-transparent z-10 rounded-l-full" />
@@ -569,9 +605,9 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
               <div className="flex w-max">
                 {/* Track 1 */}
                 <div
-                  className="flex items-center gap-1 sm:gap-1.5 shrink-0 animate-marquee-scroll group-hover/marquee:[animation-play-state:paused] pr-1 sm:pr-1.5"
+                  className="flex items-center gap-1 sm:gap-1.5 shrink-0 animate-marquee-scroll pr-1 sm:pr-1.5"
                   style={{
-                    animationPlayState: isDockPaused ? 'paused' : 'running',
+                    animationPlayState: isTouchActive ? 'paused' : 'running',
                   }}
                 >
                   {[...CATEGORY_DOCK, ...CATEGORY_DOCK].map((cat, idx) => {
@@ -606,9 +642,9 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                 {/* Track 2 (Clone for mathematical infinite seamless continuous loop) */}
                 <div
                   aria-hidden="true"
-                  className="flex items-center gap-1 sm:gap-1.5 shrink-0 animate-marquee-scroll group-hover/marquee:[animation-play-state:paused] pr-1 sm:pr-1.5"
+                  className="flex items-center gap-1 sm:gap-1.5 shrink-0 animate-marquee-scroll pr-1 sm:pr-1.5"
                   style={{
-                    animationPlayState: isDockPaused ? 'paused' : 'running',
+                    animationPlayState: isTouchActive ? 'paused' : 'running',
                   }}
                 >
                   {[...CATEGORY_DOCK, ...CATEGORY_DOCK].map((cat, idx) => {

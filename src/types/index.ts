@@ -84,6 +84,15 @@ export interface Business {
   rating: number;
   reviewCount: number;
   verified: boolean;
+  verificationPlan?: {
+    status: 'free_trial' | 'active' | 'cancelled' | 'none';
+    trialEndsAt?: string;
+    price: number;
+    currency: string;
+    billingPeriod: 'monthly';
+    subscribedAt?: string;
+    cancelledAt?: string;
+  };
   status: BusinessStatus;
   changeRequestReason?: string;
   adminNotes?: string;
@@ -97,6 +106,16 @@ export interface Business {
   pageViewsThisWeek?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface VerificationPlan {
+  status: 'free_trial' | 'active' | 'cancelled' | 'none';
+  trialEndsAt?: string;
+  price: number;
+  currency: string;
+  billingPeriod: 'monthly';
+  subscribedAt?: string;
+  cancelledAt?: string;
 }
 
 export interface Category {

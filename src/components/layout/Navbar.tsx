@@ -41,7 +41,7 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-4">
           {/* LEFT: Wordmark Logo */}
           <div className="flex items-center gap-6">
-            <BrandLogo href="/" size="md" theme="light" />
+            <BrandLogo href="/" size="md" theme="light" withIcon={false} />
 
             {/* Location Selector Trigger */}
             <button
