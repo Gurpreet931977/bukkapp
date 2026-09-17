@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MapPin, Search, Menu, X, ChevronDown, Calendar, Bookmark, Store, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { LocationSelectorModal } from '@/components/layout/LocationSelectorModal';
 import { store } from '@/lib/db/store';
 import { DEMO_USERS } from '@/lib/seed/data';
@@ -40,12 +41,7 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-4">
           {/* LEFT: Wordmark Logo */}
           <div className="flex items-center gap-6">
-            <Link href="/" className="group flex items-center gap-1.5 focus:outline-hidden">
-              <span className="font-display text-2xl sm:text-[26px] font-black tracking-tight text-brand-black transition-transform group-hover:scale-[1.01]">
-                BUKK<span className="text-neutral-500 font-bold group-hover:text-brand-black transition-colors">APP</span>
-              </span>
-              <span className="w-2 h-2 rounded-full bg-brand-lime" />
-            </Link>
+            <BrandLogo href="/" size="md" />
 
             {/* Location Selector Trigger */}
             <button

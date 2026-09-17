@@ -26,6 +26,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://bukkapp.in'),
   title: 'BUKKAPP — Universal Local Booking Marketplace',
   description:
     'Discover trusted local businesses, see real-time availability, and book appointments in minutes. Dentists, salons, pickleball, AC repair, detailing and more in Dehradun.',
@@ -39,11 +40,28 @@ export const metadata: Metadata = {
     'bukkapp',
   ],
   authors: [{ name: 'BUKKAPP Technologies' }],
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png', sizes: '192x192' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
   openGraph: {
     title: 'BUKKAPP — Everything you need. Booked.',
     description: 'Universal local booking marketplace with real-time availability in Dehradun.',
     type: 'website',
     url: 'https://bukkapp.in',
+    images: [
+      {
+        url: '/logos/primary-wordmark.png',
+        width: 1497,
+        height: 371,
+        alt: 'BUKKAPP Official Logo',
+      },
+    ],
   },
 };
 

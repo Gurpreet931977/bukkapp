@@ -44,3 +44,11 @@ export const PALETTE = {
   muted: '#969696',
   secondary: '#666666',
 } as const;
+
+export const LOGOS = {
+  primary: '/logos/primary-wordmark.png',
+  primaryDark: '/logos/primary-wordmark-dark.png',
+  secondary: '/logos/secondary-logomark.png',
+  secondaryDark: '/logos/secondary-logomark-dark.png',
+  icon: '/logos/logomark-icon.png',
+} as const;

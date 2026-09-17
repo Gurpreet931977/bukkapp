@@ -15,8 +15,8 @@ export interface BrandLogoProps {
 }
 
 /**
- * Minimal & Refined Brand Monogram SVG Icon
- * Features interlocking geometric 'P' marks with a subtle electric-lime accent.
+ * Brand Logomark Icon
+ * Renders the official checkmark + electric-lime streak logomark.
  */
 export function BrandMark({
   size = 28,
@@ -28,51 +28,27 @@ export function BrandMark({
   className?: string;
 }) {
   const isDark = theme === 'dark';
-  const isLime = theme === 'lime';
-
-  const bgFill = isLime ? '#C7F36B' : isDark ? '#1C1C1C' : '#111111';
-  const primaryFill = isLime ? '#111111' : isDark ? '#FFFFFF' : '#FFFFFF';
-  const secondaryFill = isLime ? '#111111' : '#C7F36B';
+  const logoSrc = isDark ? '/logos/secondary-logomark-dark.png' : '/logos/secondary-logomark.png';
 
   return (
     <div
-      className={`relative inline-flex items-center justify-center shrink-0 rounded-xl overflow-hidden transition-transform duration-200 group-hover:scale-105 ${className}`}
-      style={{ width: size, height: size, backgroundColor: bgFill }}
+      className={`relative inline-flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 ${className}`}
+      style={{ width: size, height: size }}
       aria-hidden="true"
     >
-      <svg
-        viewBox="0 0 36 36"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-[74%] h-[74%]"
-      >
-        {/* First Geometric 'P' */}
-        <path
-          d="M8 7H17C19.7614 7 22 9.23858 22 12C22 14.7614 19.7614 17 17 17H12.5V29H8V7Z"
-          fill={primaryFill}
-        />
-        <path
-          d="M12.5 11.5H16.5C17.6046 11.5 18.5 12.3954 18.5 13.5C18.5 14.6046 17.6046 15.5 16.5 15.5H12.5V11.5Z"
-          fill={bgFill}
-        />
-
-        {/* Second Stepped 'P' */}
-        <path
-          d="M17 11H25C27.2091 11 29 12.7909 29 15C29 17.2091 27.2091 19 25 19H21V29H17V11Z"
-          fill={secondaryFill}
-        />
-        <path
-          d="M21 14.5H24.5C25.3284 14.5 26 15.1716 26 16C26 16.8284 25.3284 17.5 24.5 17.5H21V14.5Z"
-          fill={bgFill}
-        />
-      </svg>
+      <img
+        src={logoSrc}
+        alt="BUKKAPP Mark"
+        className="w-full h-full object-contain"
+        loading="eager"
+      />
     </div>
   );
 }
 
 /**
- * Minimal Double-P Highlight
- * Renders 'PP' seamlessly in-line with a subtle, clean color accent.
+ * DoublePHighlight
+ * Maintained for backward compatibility in typography text formatting.
  */
 export function DoublePHighlight({
   theme = 'light',
@@ -102,7 +78,7 @@ export function DoublePHighlight({
 
 /**
  * Master Brand Logo Component
- * Renders the cohesive BUKKAPP wordmark with minimal, elegant double-P accent.
+ * Renders the official BUKKAPP wordmark logo with optional secondary logomark.
  */
 export function BrandLogo({
   size = 'md',
@@ -114,14 +90,17 @@ export function BrandLogo({
   className = '',
   interactive = true,
 }: BrandLogoProps) {
-  const textSizeClasses = {
-    xs: 'text-sm font-black',
-    sm: 'text-base font-black',
-    md: 'text-xl sm:text-2xl font-black',
-    lg: 'text-2xl sm:text-3xl font-black',
-    xl: 'text-3xl sm:text-4xl font-black',
-    '2xl': 'text-4xl sm:text-5xl font-black',
-    display: 'text-5xl sm:text-6xl md:text-7xl font-black',
+  const isDark = theme === 'dark';
+  const logoSrc = isDark ? '/logos/primary-wordmark-dark.png' : '/logos/primary-wordmark.png';
+
+  const heightClasses = {
+    xs: 'h-5',
+    sm: 'h-6',
+    md: 'h-7 sm:h-8',
+    lg: 'h-8 sm:h-9',
+    xl: 'h-10 sm:h-12',
+    '2xl': 'h-12 sm:h-14',
+    display: 'h-14 sm:h-16 md:h-18',
   }[size];
 
   const iconSizes = {
@@ -134,25 +113,21 @@ export function BrandLogo({
     display: 64,
   }[size];
 
-  const isDark = theme === 'dark';
-  const isLime = theme === 'lime';
-  const textColor = isLime ? 'text-brand-black' : isDark ? 'text-white' : 'text-brand-black';
-  const accentColor = isLime ? 'text-neutral-800' : isDark ? 'text-brand-lime' : 'text-[#65a30d]';
-
   const content = (
     <div
-      className={`group inline-flex items-center gap-2 font-display select-none ${
+      className={`group inline-flex items-center gap-2 select-none ${
         interactive ? 'cursor-pointer' : ''
       } ${className}`}
     >
       {withIcon && <BrandMark size={iconSizes} theme={theme} />}
 
-      <div className="flex flex-col">
-        <div className="flex items-center tracking-tight leading-none">
-          <span className={`${textSizeClasses} ${textColor} tracking-tight`}>
-            BUKKA<span className={accentColor}>PP</span>
-          </span>
-        </div>
+      <div className="flex flex-col justify-center">
+        <img
+          src={logoSrc}
+          alt="BUKKAPP"
+          className={`${heightClasses} w-auto object-contain transition-transform duration-200 group-hover:scale-[1.01]`}
+          loading="eager"
+        />
 
         {withTagline && (
           <span
@@ -169,7 +144,7 @@ export function BrandLogo({
 
   if (href) {
     return (
-      <Link href={href} className="focus:outline-hidden inline-flex">
+      <Link href={href} className="focus:outline-hidden inline-flex items-center" aria-label="BUKKAPP Home">
         {content}
       </Link>
     );
@@ -180,10 +155,9 @@ export function BrandLogo({
 
 /**
  * BrandText Component for Body Copy, Headings & Inline Mentions
- * Seamlessly formats BUKKAPP with minimal double-P styling.
  */
 export function BrandText({
-  variant = 'caps', // 'caps' (BUKKAPP), 'title' (BukkApp), 'lower' (bukkapp)
+  variant = 'caps',
   theme = 'light',
   className = '',
 }: {
@@ -236,9 +210,11 @@ export function BrandHologram({
         <BrandMark size={32} theme="dark" />
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-black tracking-tight text-white">
-              BUKKA<span className="text-brand-lime">PP</span>
-            </span>
+            <img
+              src="/logos/primary-wordmark-dark.png"
+              alt="BUKKAPP"
+              className="h-4 w-auto object-contain"
+            />
             <span className="text-[10px] uppercase tracking-wider font-bold text-brand-lime bg-brand-lime/10 px-1.5 py-0.5 rounded-md">
               Official Ticket
             </span>
@@ -281,12 +257,14 @@ export function BrandBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${styles} ${className}`}
+      className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-bold ${styles} ${className}`}
     >
-      <span className="w-2 h-2 rounded-full bg-brand-lime shrink-0 animate-pulse" />
-      <span className="font-display font-black tracking-tight">
-        BUKKA<span className="text-lime-700">PP</span>
-      </span>
+      <BrandMark size={14} theme={variant === 'dark' ? 'dark' : 'light'} />
+      <img
+        src={variant === 'dark' ? '/logos/primary-wordmark-dark.png' : '/logos/primary-wordmark.png'}
+        alt="BUKKAPP"
+        className="h-3 w-auto object-contain"
+      />
       <span className="text-[11px] font-semibold opacity-90">{label}</span>
     </span>
   );

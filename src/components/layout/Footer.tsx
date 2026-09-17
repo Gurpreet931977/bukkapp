@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { INITIAL_CATEGORIES, DEHRADUN_NEIGHBORHOODS } from '@/lib/seed/data';
 
 export function Footer() {
@@ -10,12 +11,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-neutral-800">
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-flex items-center gap-1.5 focus:outline-hidden">
-              <span className="text-2xl font-black tracking-tight text-white">
-                BUKK<span className="text-neutral-400 font-bold">APP</span>
-              </span>
-              <span className="w-2 h-2 rounded-full bg-brand-lime" />
-            </Link>
+            <BrandLogo href="/" size="lg" theme="dark" />
             <p className="text-xs sm:text-sm text-neutral-400 max-w-sm leading-relaxed">
               The universal local booking marketplace. Discover verified businesses, check real-time availability, and book instantly in seconds.
             </p>
