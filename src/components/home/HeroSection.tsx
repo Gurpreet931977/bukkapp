@@ -13,6 +13,15 @@ import {
   X,
   Zap,
   CheckCircle2,
+  QrCode,
+  ShieldCheck,
+  Scissors,
+  Trophy,
+  Snowflake,
+  Car,
+  Smile,
+  Star,
+  type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { SearchIntentParser } from '@/lib/search/intentParser';
@@ -23,13 +32,18 @@ interface HeroSectionProps {
   onOpenLocation?: () => void;
 }
 
-const KINETIC_HEADLINES = [
-  'Pickleball courts',
-  'Dentist clinics',
-  'Precision fades',
-  'Same-day AC repair',
-  'Ayurvedic spas',
-  'Car detailing',
+interface KineticService {
+  name: string;
+  Icon: LucideIcon;
+}
+
+const KINETIC_SERVICES: KineticService[] = [
+  { name: 'Pickleball Courts', Icon: Trophy },
+  { name: 'Precision Fades', Icon: Scissors },
+  { name: 'Dentist Clinics', Icon: Smile },
+  { name: 'Same-Day AC Repair', Icon: Snowflake },
+  { name: 'Ayurvedic Spas', Icon: Sparkles },
+  { name: 'Car Detailing', Icon: Car },
 ];
 
 const ROTATING_SUGGESTIONS = [
@@ -41,22 +55,35 @@ const ROTATING_SUGGESTIONS = [
   'car detailing this weekend',
 ];
 
-const POPULAR_QUICK_PICKS = [
-  { label: 'Dentist Consultation', query: 'dentist tomorrow', icon: '🦷' },
-  { label: 'Pickleball Court', query: 'pickleball for 4 saturday', icon: '🎾' },
-  { label: 'Salon & Haircut', query: 'haircut jakhan', icon: '✂️' },
-  { label: 'AC Service & Repair', query: 'ac repair under 800', icon: '❄️' },
-  { label: 'Ayurvedic Spa', query: 'spa rajpur road', icon: '🧖' },
-  { label: 'Car Detailing', query: 'car detailing dehradun', icon: '🚗' },
+interface QuickPick {
+  label: string;
+  query: string;
+  Icon: LucideIcon;
+}
+
+const POPULAR_QUICK_PICKS: QuickPick[] = [
+  { label: 'Dentist Consultation', query: 'dentist tomorrow', Icon: Smile },
+  { label: 'Pickleball Court', query: 'pickleball for 4 saturday', Icon: Trophy },
+  { label: 'Salon & Haircut', query: 'haircut jakhan', Icon: Scissors },
+  { label: 'AC Service & Repair', query: 'ac repair under 800', Icon: Snowflake },
+  { label: 'Ayurvedic Spa', query: 'spa rajpur road', Icon: Sparkles },
+  { label: 'Car Detailing', query: 'car detailing dehradun', Icon: Car },
 ];
 
-const CATEGORY_DOCK = [
-  { label: 'Pickleball', icon: '🎾', status: '4 venues', query: 'pickleball' },
-  { label: 'Salons', icon: '✂️', status: '12 open', query: 'haircut' },
-  { label: 'Dentists', icon: '🦷', status: 'Verified', query: 'dentist' },
-  { label: 'AC Service', icon: '❄️', status: 'Same-day', query: 'ac repair' },
-  { label: 'Detailing', icon: '🚗', status: 'Top rated', query: 'detailing' },
-  { label: 'Wellness', icon: '🧖', status: '5 spas', query: 'spa' },
+interface CategoryDockItem {
+  label: string;
+  Icon: LucideIcon;
+  status: string;
+  query: string;
+}
+
+const CATEGORY_DOCK: CategoryDockItem[] = [
+  { label: 'Pickleball', Icon: Trophy, status: '4 venues', query: 'pickleball' },
+  { label: 'Salons', Icon: Scissors, status: '12 open', query: 'haircut' },
+  { label: 'Dentists', Icon: Smile, status: 'Verified', query: 'dentist' },
+  { label: 'AC Service', Icon: Snowflake, status: 'Same-day', query: 'ac repair' },
+  { label: 'Detailing', Icon: Car, status: 'Top rated', query: 'detailing' },
+  { label: 'Wellness', Icon: Sparkles, status: '5 spas', query: 'spa' },
 ];
 
 export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: HeroSectionProps) {
@@ -66,21 +93,22 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const [isFocused, setIsFocused] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [kineticIndex, setKineticIndex] = useState(0);
+  const [isPassModalOpen, setIsPassModalOpen] = useState(false);
 
-  // Rotating suggestion carousel
+  // Rotating suggestion carousel (3.6s cadence for relaxed readability)
   useEffect(() => {
     if (query) return;
     const interval = setInterval(() => {
       setSuggestionIndex((prev) => (prev + 1) % ROTATING_SUGGESTIONS.length);
-    }, 3200);
+    }, 3600);
     return () => clearInterval(interval);
   }, [query]);
 
-  // Kinetic headline flipper (cycles every 2.8s)
+  // Kinetic service flipper (cycles every 3.2s)
   useEffect(() => {
     const timer = setInterval(() => {
-      setKineticIndex((prev) => (prev + 1) % KINETIC_HEADLINES.length);
-    }, 2800);
+      setKineticIndex((prev) => (prev + 1) % KINETIC_SERVICES.length);
+    }, 3200);
     return () => clearInterval(timer);
   }, []);
 
@@ -137,70 +165,139 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
 
       {/* Outer 7XL Framing Container for Harmonious Floating Cards & Central Hero */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        {/* Floating Live Activity Card: Left (Confirmed Booking Proof) */}
-        <div className="hidden xl:block absolute top-20 left-2 2xl:left-6 z-20 pointer-events-auto">
-          <button
-            type="button"
-            onClick={() => handlePromptClick('pickleball')}
-            className="group block text-left animate-float-left bg-white/90 backdrop-blur-xl border border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.1)] rounded-2xl p-3.5 w-64 transition-all duration-300 hover:scale-[1.02] select-none cursor-pointer"
+        {/* Interactive Floating Live Activity Card: Left (Verified Booking Pass) */}
+        <div className="hidden min-[1420px]:block absolute top-12 left-0 2xl:left-4 z-20 pointer-events-auto">
+          <div
+            onClick={() => setIsPassModalOpen(true)}
+            className="group block text-left animate-float-left bg-white/95 backdrop-blur-2xl border border-neutral-200/90 hover:border-brand-black shadow-[0_12px_36px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.12),0_0_24px_rgba(199,243,107,0.3)] rounded-2xl p-4 w-72 transition-all duration-300 hover:-translate-y-1 select-none cursor-pointer"
           >
-            <div className="flex items-center justify-between gap-2 mb-2.5">
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200/80">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Confirmed 2m ago
+            {/* Header: Live Confirmed Radar Pill + Monospace Ref */}
+            <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-neutral-100">
+              <div className="flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
+                  Confirmed 2m ago
+                </span>
+              </div>
+              <span className="text-[10px] font-mono font-bold text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded">
+                #BK-9241
               </span>
-              <span className="text-[10px] font-mono text-neutral-400">#BK-9241</span>
             </div>
-            <div className="flex items-start gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-brand-surface-alt flex items-center justify-center text-lg shrink-0 border border-neutral-200/70 group-hover:scale-105 transition-transform">
-                🎾
+
+            {/* Venue Profile with Real Image */}
+            <div className="flex items-start gap-3 mb-3">
+              <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-neutral-200 shadow-2xs">
+                <img
+                  src="https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=160&q=80"
+                  alt="Zenith Pickleball Club"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <span className="absolute bottom-0 right-0 bg-brand-black/90 backdrop-blur-xs p-1 rounded-tl text-brand-lime flex items-center justify-center">
+                  <Trophy className="w-2.5 h-2.5" />
+                </span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-brand-black truncate group-hover:text-neutral-700 transition-colors">
-                  Zenith Pickleball Club
+                <div className="flex items-center gap-1">
+                  <h4 className="text-xs font-black text-brand-black truncate">Zenith Pickleball Club</h4>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                </div>
+                <p className="text-[11px] font-semibold text-neutral-700 mt-0.5">Court 1 · 6:00 PM Today</p>
+                <p className="text-[10px] text-neutral-400 flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-2.5 h-2.5 text-neutral-400 shrink-0" />
+                  <span>Rajpur Road, Dehradun</span>
                 </p>
-                <p className="text-[11px] text-neutral-600 font-medium">Court 1 · 6:00 PM Today</p>
-                <p className="text-[10px] text-neutral-400 mt-0.5">Rajpur Road, Dehradun</p>
               </div>
             </div>
-          </button>
+
+            {/* Interactive Tear-off Ticket Footer */}
+            <div className="pt-2.5 border-t border-dashed border-neutral-200 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-bold leading-tight">Total Paid</span>
+                <span className="text-xs font-black text-brand-black leading-tight">₹600 via UPI</span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsPassModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-brand-black text-white text-[11px] font-bold hover:bg-neutral-800 transition-colors group/btn shadow-2xs cursor-pointer"
+              >
+                <span>View Pass</span>
+                <ArrowRight className="w-3 h-3 transition-transform group-hover/btn:translate-x-0.5" />
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Floating Live Activity Card: Right (Instant Open Slot) */}
-        <div className="hidden xl:block absolute top-24 right-2 2xl:right-6 z-20 pointer-events-auto">
-          <button
-            type="button"
-            onClick={() => handlePromptClick('haircut')}
-            className="group block text-left animate-float-right bg-white/90 backdrop-blur-xl border border-neutral-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.1)] rounded-2xl p-3.5 w-64 transition-all duration-300 hover:scale-[1.02] select-none cursor-pointer"
+        {/* Interactive Floating Live Activity Card: Right (Instant Open Slot) */}
+        <div className="hidden min-[1420px]:block absolute top-16 right-0 2xl:right-4 z-20 pointer-events-auto">
+          <div
+            onClick={() => router.push('/business/the-groom-room')}
+            className="group block text-left animate-float-right bg-white/95 backdrop-blur-2xl border border-neutral-200/90 hover:border-brand-black shadow-[0_12px_36px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.12),0_0_24px_rgba(199,243,107,0.3)] rounded-2xl p-4 w-72 transition-all duration-300 hover:-translate-y-1 select-none cursor-pointer"
           >
-            <div className="flex items-center justify-between gap-2 mb-2.5">
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-brand-surface-alt text-brand-black text-[10px] font-bold border border-brand-border">
-                <Clock className="w-3 h-3 text-neutral-500" />
-                Next Open Slot
-              </span>
-              <span className="text-[10px] font-bold text-brand-black flex items-center gap-0.5">
-                <span className="text-amber-500">★</span> 4.9 <span className="text-neutral-400 font-normal">(128)</span>
+            {/* Header: Next Open Slot + Rating */}
+            <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-neutral-100">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-brand-lime live-pulse-dot" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-neutral-800">
+                  Next Open Slot
+                </span>
+              </div>
+              <span className="text-[10px] font-bold text-amber-800 flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80">
+                <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400 shrink-0" />
+                <span>4.9</span>
+                <span className="text-neutral-400 font-normal">(148)</span>
               </span>
             </div>
-            <div className="flex items-start gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center text-lg shrink-0 border border-neutral-200/70 group-hover:scale-105 transition-transform">
-                ✂️
+
+            {/* Venue Profile with Real Image */}
+            <div className="flex items-start gap-3 mb-3">
+              <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-neutral-200 shadow-2xs">
+                <img
+                  src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=160&q=80"
+                  alt="The Groom Room"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <span className="absolute bottom-0 right-0 bg-brand-black/90 backdrop-blur-xs p-1 rounded-tl text-brand-lime flex items-center justify-center">
+                  <Scissors className="w-2.5 h-2.5" />
+                </span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-brand-black truncate group-hover:text-neutral-700 transition-colors">
-                  Jakhan Precision Fades
-                </p>
-                <p className="text-[11px] font-bold text-emerald-600">Today at 4:30 PM</p>
-                <div className="mt-1.5 flex items-center justify-between">
-                  <span className="text-[10px] text-neutral-400">1 slot left</span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-black group-hover:text-neutral-600">
-                    <span>Book in 10s</span>
-                    <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-                  </span>
+                <div className="flex items-center gap-1">
+                  <h4 className="text-xs font-black text-brand-black truncate">The Groom Room</h4>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                 </div>
+                <p className="text-[11px] font-bold text-emerald-600 mt-0.5">Today at 4:30 PM</p>
+                <p className="text-[10px] text-neutral-400 flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-2.5 h-2.5 text-neutral-400 shrink-0" />
+                  <span>Ballupur, Dehradun</span>
+                </p>
               </div>
             </div>
-          </button>
+
+            {/* Interactive Tear-off Ticket Footer */}
+            <div className="pt-2.5 border-t border-dashed border-neutral-200 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-bold leading-tight">1 slot left</span>
+                <span className="text-xs font-black text-brand-black leading-tight">From ₹450</span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push('/business/the-groom-room');
+                }}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-brand-black text-white text-[11px] font-bold hover:bg-neutral-800 transition-colors group/btn shadow-2xs cursor-pointer"
+              >
+                <span>Book Slot</span>
+                <ArrowRight className="w-3 h-3 transition-transform group-hover/btn:translate-x-0.5" />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Central Hero Column */}
@@ -218,27 +315,36 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
             </button>
           </div>
 
-          {/* Hero Title with Kinetic Category Word Flipper */}
-          <div className={`space-y-3 transition-opacity duration-300 ${isFocused ? 'opacity-90' : 'opacity-100'}`}>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[68px] font-black text-brand-black tracking-tight leading-[1.08] animate-hero-title">
-              <span>Everything you need.</span>
-              <span className="block mt-1 sm:mt-2">
-                <span className="relative inline-block whitespace-nowrap">
-                  <span
-                    key={kineticIndex}
-                    className="relative z-10 inline-block animate-kinetic-flip text-brand-black"
-                  >
-                    {KINETIC_HEADLINES[kineticIndex]}
-                  </span>
-                  <span className="absolute bottom-1 sm:bottom-2 left-0 w-full h-3 sm:h-4 bg-brand-lime -z-0 rounded-xs transition-all duration-300" />
-                </span>
-                <span className="text-brand-black font-black"> · Booked.</span>
+          {/* Hero Title & Kinetic Discovery Ticker (Rock-solid, zero line-jumping) */}
+          <div className={`space-y-3.5 sm:space-y-4 transition-opacity duration-300 ${isFocused ? 'opacity-90' : 'opacity-100'}`}>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[72px] font-black text-brand-black tracking-tight leading-[1.04] animate-hero-title">
+              <span>Everything you need</span>{' '}
+              <span className="relative inline-block whitespace-nowrap">
+                <span className="relative z-10">Booked.</span>
+                <span className="absolute bottom-1.5 sm:bottom-2.5 left-0 w-full h-3 sm:h-4 bg-brand-lime -z-0 rounded-xs" />
               </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-brand-secondary max-w-xl mx-auto font-normal leading-relaxed">
-              Discover verified local businesses, see real-time open calendar slots, and confirm appointments in seconds.
-            </p>
+            {/* Kinetic Discovery Pill Ticker (Fixed Height, Locked Layout) */}
+            <div className="flex items-center justify-center flex-wrap gap-2 text-sm sm:text-base md:text-lg text-brand-secondary font-medium min-h-[36px]">
+              <span>Real-time availability for</span>
+              <span className="inline-flex items-center h-8 overflow-hidden relative">
+                {(() => {
+                  const CurrentIcon = KINETIC_SERVICES[kineticIndex].Icon;
+                  return (
+                    <span
+                      key={kineticIndex}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white border border-neutral-200/90 text-brand-black font-bold text-xs sm:text-sm shadow-subtle animate-kinetic-flip whitespace-nowrap"
+                    >
+                      <CurrentIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-black shrink-0" />
+                      <span>{KINETIC_SERVICES[kineticIndex].name}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    </span>
+                  );
+                })()}
+              </span>
+              <span>in Dehradun.</span>
+            </div>
           </div>
 
           {/* Universal Search Command Center */}
@@ -291,24 +397,22 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                   spellCheck="false"
                 />
 
-                {/* Dynamic Animated Placeholder Overlay */}
+                {/* Dynamic Animated Placeholder Overlay (Clean, Single-line, No-wrap) */}
                 {!query && (
                   <div
                     onClick={() => inputRef.current?.focus()}
-                    className="absolute left-11 sm:left-12 right-14 sm:right-28 top-0 bottom-0 flex items-center pointer-events-none text-xs sm:text-base text-neutral-400 select-none overflow-hidden"
+                    className="absolute left-11 sm:left-12 right-12 sm:right-24 top-0 bottom-0 flex items-center pointer-events-none text-xs sm:text-sm md:text-base text-neutral-400 select-none overflow-hidden whitespace-nowrap"
                   >
-                    <span className="hidden md:inline shrink-0">What do you want to book? (e.g.&nbsp;</span>
-                    <span className="md:hidden shrink-0">Try&nbsp;</span>
-                    <span className="inline-flex items-center overflow-hidden h-6 relative font-medium text-brand-black">
+                    <span className="shrink-0 font-normal text-neutral-400">Search&nbsp;</span>
+                    <span className="inline-flex items-center overflow-hidden h-6 relative font-medium text-neutral-800 whitespace-nowrap">
                       <span
                         key={suggestionIndex}
-                        className="animate-kinetic-flip inline-flex items-center text-neutral-700"
+                        className="animate-kinetic-flip inline-flex items-center whitespace-nowrap text-brand-black"
                       >
                         &ldquo;{ROTATING_SUGGESTIONS[suggestionIndex]}&rdquo;
                       </span>
-                      <span className="inline-block w-[2px] h-3.5 sm:h-4 bg-brand-lime ml-1 animate-cursor" />
+                      <span className="inline-block w-[2px] h-3.5 sm:h-4 bg-brand-lime ml-1.5 animate-cursor shrink-0" />
                     </span>
-                    <span className="hidden md:inline shrink-0">)</span>
                   </div>
                 )}
 
@@ -320,7 +424,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                       setQuery('');
                       inputRef.current?.focus();
                     }}
-                    className="p-1 rounded-full text-neutral-400 hover:text-brand-black hover:bg-neutral-100 transition-all animate-scale-in shrink-0 z-10"
+                    className="p-1 rounded-full text-neutral-400 hover:text-brand-black hover:bg-neutral-100 transition-all animate-scale-in shrink-0 z-10 cursor-pointer"
                     aria-label="Clear search"
                   >
                     <X className="w-4 h-4" />
@@ -364,22 +468,25 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                   <span className="text-[10px] text-neutral-400">Click to fill</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {POPULAR_QUICK_PICKS.map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        handleFillSuggestion(item.query);
-                      }}
-                      className="flex items-center gap-2 p-2 rounded-xl bg-brand-surface-alt hover:bg-brand-lime/25 border border-transparent hover:border-brand-lime/50 text-xs font-semibold text-brand-black transition-all text-left group/item"
-                    >
-                      <span className="text-base shrink-0 group-hover/item:scale-110 transition-transform">
-                        {item.icon}
-                      </span>
-                      <span className="truncate">{item.label}</span>
-                    </button>
-                  ))}
+                  {POPULAR_QUICK_PICKS.map((item) => {
+                    const ItemIcon = item.Icon;
+                    return (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleFillSuggestion(item.query);
+                        }}
+                        className="flex items-center gap-2 p-2 rounded-xl bg-brand-surface-alt hover:bg-brand-lime/25 border border-transparent hover:border-brand-lime/50 text-xs font-semibold text-brand-black transition-all text-left group/item cursor-pointer"
+                      >
+                        <span className="w-6 h-6 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 group-hover/item:scale-110 group-hover/item:bg-brand-lime/40 transition-all">
+                          <ItemIcon className="w-3.5 h-3.5 text-brand-black" />
+                        </span>
+                        <span className="truncate">{item.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
                 <div className="mt-3 pt-2 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-400">
                   <span className="flex items-center gap-1">
@@ -433,30 +540,33 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
             )}
           </div>
 
-          {/* Visual Category Pill Dock with Live Status Indicators */}
-          <div className="pt-2 max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-white/90 backdrop-blur-md border border-brand-border/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] max-w-full overflow-x-auto no-scrollbar">
-              {CATEGORY_DOCK.map((cat) => (
-                <button
-                  key={cat.label}
-                  type="button"
-                  onClick={() => handlePromptClick(cat.query)}
-                  className="shrink-0 flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-left transition-all duration-200 hover:bg-neutral-100 active:scale-95 group cursor-pointer"
-                >
-                  <span className="text-sm sm:text-base shrink-0 group-hover:scale-110 transition-transform">
-                    {cat.icon}
-                  </span>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-brand-black leading-tight">
-                      {cat.label}
-                    </span>
-                    <span className="text-[10px] text-neutral-500 group-hover:text-brand-black flex items-center gap-1 font-medium leading-tight">
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-lime" />
-                      {cat.status}
-                    </span>
-                  </div>
-                </button>
-              ))}
+          {/* Visual Category Pill Dock with Live Status Indicators (Zero Scrollbar, Squircle Tiles) */}
+          <div className="pt-2 max-w-full flex justify-center">
+            <div className="inline-flex items-center gap-1 sm:gap-1.5 p-1.5 rounded-2xl bg-white/95 backdrop-blur-xl border border-neutral-200/80 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] overflow-x-auto no-scrollbar max-w-full">
+              {CATEGORY_DOCK.map((cat) => {
+                const CatIcon = cat.Icon;
+                return (
+                  <button
+                    key={cat.label}
+                    type="button"
+                    onClick={() => handlePromptClick(cat.query)}
+                    className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-left transition-all duration-200 hover:bg-neutral-100/80 active:scale-95 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-neutral-100/90 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-brand-lime/40 transition-all">
+                      <CatIcon className="w-4 h-4 text-neutral-800 group-hover:text-brand-black transition-colors" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-brand-black leading-tight group-hover:text-black">
+                        {cat.label}
+                      </span>
+                      <span className="text-[10px] text-neutral-400 font-medium leading-tight flex items-center gap-1 group-hover:text-neutral-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        {cat.status}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -479,7 +589,120 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
           </div>
         </div>
       </div>
+
+      {/* Interactive Live Booking Pass Modal */}
+      {isPassModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setIsPassModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-md bg-white rounded-3xl border border-brand-border shadow-modal overflow-hidden animate-scale-in text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-brand-black text-white p-6 relative">
+              <button
+                type="button"
+                onClick={() => setIsPassModalOpen(false)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Close pass"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-brand-lime live-pulse-dot" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-brand-lime">
+                  Verified Booking Pass
+                </span>
+              </div>
+
+              <div className="flex items-baseline justify-between pr-8">
+                <h3 className="text-xl font-black tracking-tight text-white">
+                  Zenith Pickleball Club
+                </h3>
+                <span className="font-mono text-xs font-bold text-neutral-400">#BK-9241</span>
+              </div>
+              <p className="text-xs text-neutral-300 mt-1">Rajpur Road, Dehradun</p>
+            </div>
+
+            {/* Pass Body */}
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-brand-surface-alt border border-brand-border/60 text-xs">
+                <div>
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                    Reserved Resource
+                  </span>
+                  <span className="font-black text-brand-black mt-0.5 block">
+                    Court 1 (Pro Synthetic)
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                    Scheduled Slot
+                  </span>
+                  <span className="font-black text-emerald-600 mt-0.5 block">
+                    Today · 6:00 PM – 7:00 PM
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                    Customer
+                  </span>
+                  <span className="font-black text-brand-black mt-0.5 block">
+                    Gurpreet S.
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                    Payment Status
+                  </span>
+                  <span className="font-black text-brand-black mt-0.5 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <span>₹600 Paid via UPI</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Digital QR Check-in Strip */}
+              <div className="flex items-center justify-between p-3.5 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold text-brand-black block">Check-in at Reception</span>
+                  <span className="text-[11px] text-neutral-500 block">Show this QR pass at venue desk</span>
+                </div>
+                <div className="w-12 h-12 bg-white rounded-xl border border-neutral-200 p-1 flex items-center justify-center shrink-0 shadow-2xs">
+                  <QrCode className="w-10 h-10 text-brand-black" />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPassModalOpen(false);
+                    router.push('/business/zenith-pickleball');
+                  }}
+                  className="flex-1 py-3 px-4 rounded-xl bg-brand-black text-white text-xs font-bold hover:bg-neutral-800 transition-colors text-center cursor-pointer shadow-subtle flex items-center justify-center gap-1.5"
+                >
+                  <span>Book Next Court Slot</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPassModalOpen(false)}
+                  className="py-3 px-4 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-brand-black text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
+
 

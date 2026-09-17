@@ -75,16 +75,6 @@ select:focus-visible {
   display: block !important;
 }
 
-/* 2. When system preference is dark mode (unless .light class explicitly overrides) */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) .logomark-light {
-    display: none;
-  }
-  :root:not(.light) .logomark-dark {
-    display: block;
-  }
-}
-
 
 /* Fluid Responsive Typography Tokens */
 .display-xl {
@@ -174,6 +164,18 @@ select:focus-visible {
   justify-content: center;
 }
 
+/* Universal No-Scrollbar Utility (Hides scrollbars on all browsers) */
+.no-scrollbar {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Opera */
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
 /* Custom Minimalist Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
@@ -189,6 +191,7 @@ select:focus-visible {
 ::-webkit-scrollbar-thumb:hover {
   background: #A8A89C;
 }
+
 
 /* Leaflet Map Custom Styling */
 .leaflet-container {
