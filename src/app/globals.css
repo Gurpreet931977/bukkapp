@@ -279,6 +279,55 @@ select:focus-visible {
   animation: cursor-blink 0.85s infinite;
 }
 
+/* Smooth Floating Parallax Micro-Cards with Hardware Acceleration */
+@keyframes float-subtle-left {
+  0%, 100% {
+    transform: translateY(0px) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(-0.5deg);
+  }
+}
+
+@keyframes float-subtle-right {
+  0%, 100% {
+    transform: translateY(0px) rotate(1.5deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(0.5deg);
+  }
+}
+
+.animate-float-left {
+  animation: float-subtle-left 6.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-float-right {
+  animation: float-subtle-right 7.5s ease-in-out 1.2s infinite;
+  will-change: transform;
+}
+
+/* Kinetic Word Flip with Blur Entrance */
+@keyframes kinetic-flip {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+.animate-kinetic-flip {
+  animation: kinetic-flip 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+
+
 
 /* Reduced Motion Accessibility */
 @media (prefers-reduced-motion: reduce) {
