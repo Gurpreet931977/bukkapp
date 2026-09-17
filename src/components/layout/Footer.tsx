@@ -11,7 +11,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-neutral-800">
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">
-            <BrandLogo href="/" size="lg" theme="dark" />
+            <BrandLogo href="/" size="lg" theme="dark" withIcon={false} />
             <p className="text-xs sm:text-sm text-neutral-400 max-w-sm leading-relaxed">
               The universal local booking marketplace. Discover verified businesses, check real-time availability, and book instantly in seconds.
             </p>

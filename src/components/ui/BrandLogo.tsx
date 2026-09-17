@@ -128,7 +128,7 @@ export function DoublePHighlight({
 export function BrandLogo({
   size = 'md',
   theme = 'auto',
-  withIcon = true,
+  withIcon = false,
   withTagline = false,
   taglineText = 'Universal Local Booking',
   href,
