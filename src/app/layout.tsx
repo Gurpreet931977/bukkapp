@@ -42,6 +42,9 @@ export const metadata: Metadata = {
   authors: [{ name: 'BUKKAPP Technologies' }],
   icons: {
     icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-dark.png', type: 'image/png', sizes: '32x32', media: '(prefers-color-scheme: dark)' },
+      { url: '/favicon-light.png', type: 'image/png', sizes: '32x32', media: '(prefers-color-scheme: light)' },
       { url: '/favicon.ico', sizes: 'any' },
       { url: '/icon.png', type: 'image/png', sizes: '192x192' },
     ],
