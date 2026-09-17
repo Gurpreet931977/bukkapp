@@ -134,25 +134,38 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     return () => clearTimeout(timer);
   }, [displayText, isDeleting, typewriterIndex]);
 
-  // Category Dock Interactive Engine: Smooth slow continuous auto-slide + silky manual drag/swipe
+  // Category Dock Interactive Engine: Smooth slow continuous auto-sliding + fluid manual drag/swipe + intelligent resume
   const dockScrollRef = useRef<HTMLDivElement>(null);
   const firstSetRef = useRef<HTMLDivElement>(null);
   const isInteractingRef = useRef(false);
   const isPointerDownRef = useRef(false);
+  const isHoveredRef = useRef(false);
   const startXRef = useRef(0);
   const startScrollLeftRef = useRef(0);
   const hasDraggedRef = useRef(false);
   const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollAccumulatorRef = useRef(0);
+  const isProgrammaticScrollRef = useRef(false);
+  const lastTimestampRef = useRef<number | null>(null);
 
-  const pauseAutoScroll = () => {
+  const pauseAutoSlide = () => {
     isInteractingRef.current = true;
-    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    if (resumeTimerRef.current) {
+      clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = null;
+    }
   };
 
-  const resumeAutoScroll = (delay = 1800) => {
-    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+  const resumeAutoSlide = (delay = 1800) => {
+    if (resumeTimerRef.current) {
+      clearTimeout(resumeTimerRef.current);
+    }
     resumeTimerRef.current = setTimeout(() => {
+      if (dockScrollRef.current) {
+        scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
+      }
       isInteractingRef.current = false;
+      lastTimestampRef.current = null;
     }, delay);
   };
 
@@ -162,7 +175,8 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     hasDraggedRef.current = false;
     startXRef.current = e.clientX;
     startScrollLeftRef.current = dockScrollRef.current?.scrollLeft || 0;
-    pauseAutoScroll();
+    scrollAccumulatorRef.current = startScrollLeftRef.current;
+    pauseAutoSlide();
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -171,28 +185,58 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     if (Math.abs(deltaX) > 4) {
       hasDraggedRef.current = true;
     }
-    dockScrollRef.current.scrollLeft = startScrollLeftRef.current - deltaX;
+    const newScrollLeft = startScrollLeftRef.current - deltaX;
+    dockScrollRef.current.scrollLeft = newScrollLeft;
+    scrollAccumulatorRef.current = newScrollLeft;
   };
 
   const handlePointerUp = () => {
     if (isPointerDownRef.current) {
       isPointerDownRef.current = false;
-      resumeAutoScroll(1800);
+      if (dockScrollRef.current) {
+        scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
+      }
+      if (!isHoveredRef.current) {
+        resumeAutoSlide(1800);
+      }
+    }
+  };
+
+  const handleWheel = () => {
+    pauseAutoSlide();
+    if (dockScrollRef.current) {
+      scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
+    }
+    if (!isHoveredRef.current) {
+      resumeAutoSlide(1800);
     }
   };
 
   const handleScroll = () => {
-    pauseAutoScroll();
-    resumeAutoScroll(1800);
+    if (isProgrammaticScrollRef.current) {
+      isProgrammaticScrollRef.current = false;
+      return;
+    }
+    // Real user scroll (touch momentum, mouse wheel, or native trackpad swipe)
+    pauseAutoSlide();
+    if (dockScrollRef.current) {
+      scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
+    }
 
     const container = dockScrollRef.current;
     const setWidth = firstSetRef.current?.offsetWidth;
     if (container && setWidth && setWidth > 0) {
       if (container.scrollLeft >= setWidth * 2) {
         container.scrollLeft -= setWidth;
-      } else if (container.scrollLeft <= setWidth * 0.4) {
+        scrollAccumulatorRef.current = container.scrollLeft;
+      } else if (container.scrollLeft <= setWidth * 0.3) {
         container.scrollLeft += setWidth;
+        scrollAccumulatorRef.current = container.scrollLeft;
       }
+    }
+
+    if (!isHoveredRef.current && !isPointerDownRef.current) {
+      resumeAutoSlide(1800);
     }
   };
 
@@ -201,29 +245,43 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     handlePromptClick(catQuery);
   };
 
-  // Continuous gentle slow auto-slide RAF loop
+  // Continuous, gentle slow auto-slide RAF loop with time-delta
   useEffect(() => {
     let animationFrameId: number;
     let initialized = false;
 
-    const loop = () => {
+    // Elegant, slow drift: ~30 pixels per second
+    const SPEED_PPS = 30;
+
+    const loop = (timestamp: number) => {
       const container = dockScrollRef.current;
       const setWidth = firstSetRef.current?.offsetWidth || 0;
 
       if (container && setWidth > 0) {
-        if (!initialized && container.scrollLeft === 0) {
+        if (!initialized) {
+          isProgrammaticScrollRef.current = true;
           container.scrollLeft = setWidth;
+          scrollAccumulatorRef.current = setWidth;
           initialized = true;
         }
 
-        if (!isInteractingRef.current) {
-          container.scrollLeft += 0.35; // Calm, slow and elegant drift
+        if (lastTimestampRef.current === null) {
+          lastTimestampRef.current = timestamp;
         }
+        const dt = Math.min((timestamp - lastTimestampRef.current) / 1000, 0.1);
+        lastTimestampRef.current = timestamp;
 
-        if (container.scrollLeft >= setWidth * 2) {
-          container.scrollLeft -= setWidth;
-        } else if (container.scrollLeft <= setWidth * 0.4) {
-          container.scrollLeft += setWidth;
+        if (!isInteractingRef.current) {
+          scrollAccumulatorRef.current += SPEED_PPS * dt;
+
+          if (scrollAccumulatorRef.current >= setWidth * 2) {
+            scrollAccumulatorRef.current -= setWidth;
+          } else if (scrollAccumulatorRef.current <= setWidth * 0.3) {
+            scrollAccumulatorRef.current += setWidth;
+          }
+
+          isProgrammaticScrollRef.current = true;
+          container.scrollLeft = scrollAccumulatorRef.current;
         }
       }
 
@@ -679,7 +737,19 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
 
           {/* Visual Category Pill Dock - Smooth Slow Auto-Slide + Silky Manual Drag/Swipe */}
           <div className="pt-2 w-full max-w-4xl mx-auto flex justify-center px-2 sm:px-4">
-            <div className="relative w-full max-w-full overflow-hidden rounded-full bg-white/95 backdrop-blur-xl border border-neutral-200/80 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-1.5 select-none">
+            <div
+              className="relative w-full max-w-full overflow-hidden rounded-full bg-white/95 backdrop-blur-xl border border-neutral-200/80 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-1.5 select-none"
+              onMouseEnter={() => {
+                isHoveredRef.current = true;
+                pauseAutoSlide();
+              }}
+              onMouseLeave={() => {
+                isHoveredRef.current = false;
+                if (!isPointerDownRef.current) {
+                  resumeAutoSlide(1200);
+                }
+              }}
+            >
               {/* Soft Edge Gradient Fade Masks for seamless entrance/exit */}
               <div className="pointer-events-none absolute left-0 inset-y-0 w-8 sm:w-12 bg-gradient-to-r from-white via-white/80 to-transparent z-10 rounded-l-full" />
               <div className="pointer-events-none absolute right-0 inset-y-0 w-8 sm:w-12 bg-gradient-to-l from-white via-white/80 to-transparent z-10 rounded-r-full" />
@@ -690,6 +760,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
+                onWheel={handleWheel}
                 onScroll={handleScroll}
                 className="relative w-full overflow-x-auto no-scrollbar flex items-center cursor-grab active:cursor-grabbing select-none py-0.5"
                 style={{
