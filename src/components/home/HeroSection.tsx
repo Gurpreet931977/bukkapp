@@ -134,25 +134,107 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     return () => clearTimeout(timer);
   }, [displayText, isDeleting, typewriterIndex]);
 
-  // Touch-responsive marquee state for category dock (responsive to touch instead of hover)
-  const [isTouchActive, setIsTouchActive] = useState(false);
-  const touchResumeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Category Dock Interactive Engine: Smooth slow continuous auto-slide + silky manual drag/swipe
+  const dockScrollRef = useRef<HTMLDivElement>(null);
+  const firstSetRef = useRef<HTMLDivElement>(null);
+  const isInteractingRef = useRef(false);
+  const isPointerDownRef = useRef(false);
+  const startXRef = useRef(0);
+  const startScrollLeftRef = useRef(0);
+  const hasDraggedRef = useRef(false);
+  const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleTouchStart = () => {
-    setIsTouchActive(true);
-    if (touchResumeTimerRef.current) clearTimeout(touchResumeTimerRef.current);
+  const pauseAutoScroll = () => {
+    isInteractingRef.current = true;
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
   };
 
-  const handleTouchEnd = () => {
-    if (touchResumeTimerRef.current) clearTimeout(touchResumeTimerRef.current);
-    touchResumeTimerRef.current = setTimeout(() => {
-      setIsTouchActive(false);
-    }, 1800);
+  const resumeAutoScroll = (delay = 1800) => {
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => {
+      isInteractingRef.current = false;
+    }, delay);
   };
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    isPointerDownRef.current = true;
+    hasDraggedRef.current = false;
+    startXRef.current = e.clientX;
+    startScrollLeftRef.current = dockScrollRef.current?.scrollLeft || 0;
+    pauseAutoScroll();
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isPointerDownRef.current || !dockScrollRef.current) return;
+    const deltaX = e.clientX - startXRef.current;
+    if (Math.abs(deltaX) > 4) {
+      hasDraggedRef.current = true;
+    }
+    dockScrollRef.current.scrollLeft = startScrollLeftRef.current - deltaX;
+  };
+
+  const handlePointerUp = () => {
+    if (isPointerDownRef.current) {
+      isPointerDownRef.current = false;
+      resumeAutoScroll(1800);
+    }
+  };
+
+  const handleScroll = () => {
+    pauseAutoScroll();
+    resumeAutoScroll(1800);
+
+    const container = dockScrollRef.current;
+    const setWidth = firstSetRef.current?.offsetWidth;
+    if (container && setWidth && setWidth > 0) {
+      if (container.scrollLeft >= setWidth * 2) {
+        container.scrollLeft -= setWidth;
+      } else if (container.scrollLeft <= setWidth * 0.4) {
+        container.scrollLeft += setWidth;
+      }
+    }
+  };
+
+  const handleCategoryItemClick = (catQuery: string) => {
+    if (hasDraggedRef.current) return;
+    handlePromptClick(catQuery);
+  };
+
+  // Continuous gentle slow auto-slide RAF loop
   useEffect(() => {
+    let animationFrameId: number;
+    let initialized = false;
+
+    const loop = () => {
+      const container = dockScrollRef.current;
+      const setWidth = firstSetRef.current?.offsetWidth || 0;
+
+      if (container && setWidth > 0) {
+        if (!initialized && container.scrollLeft === 0) {
+          container.scrollLeft = setWidth;
+          initialized = true;
+        }
+
+        if (!isInteractingRef.current) {
+          container.scrollLeft += 0.35; // Calm, slow and elegant drift
+        }
+
+        if (container.scrollLeft >= setWidth * 2) {
+          container.scrollLeft -= setWidth;
+        } else if (container.scrollLeft <= setWidth * 0.4) {
+          container.scrollLeft += setWidth;
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(loop);
+    };
+
+    animationFrameId = requestAnimationFrame(loop);
+
     return () => {
-      if (touchResumeTimerRef.current) clearTimeout(touchResumeTimerRef.current);
+      cancelAnimationFrame(animationFrameId);
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
     };
   }, []);
 
@@ -595,91 +677,61 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
             )}
           </div>
 
-          {/* Visual Category Pill Dock - Automatic Continuous Marquee in Infinite Loop (Touch Responsive) */}
+          {/* Visual Category Pill Dock - Smooth Slow Auto-Slide + Silky Manual Drag/Swipe */}
           <div className="pt-2 w-full max-w-4xl mx-auto flex justify-center px-2 sm:px-4">
-            <div
-              className="relative w-full max-w-full overflow-hidden rounded-full bg-white/95 backdrop-blur-xl border border-neutral-200/80 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-1.5 cursor-pointer select-none"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              onTouchCancel={handleTouchEnd}
-            >
+            <div className="relative w-full max-w-full overflow-hidden rounded-full bg-white/95 backdrop-blur-xl border border-neutral-200/80 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-1.5 select-none">
               {/* Soft Edge Gradient Fade Masks for seamless entrance/exit */}
               <div className="pointer-events-none absolute left-0 inset-y-0 w-8 sm:w-12 bg-gradient-to-r from-white via-white/80 to-transparent z-10 rounded-l-full" />
               <div className="pointer-events-none absolute right-0 inset-y-0 w-8 sm:w-12 bg-gradient-to-l from-white via-white/80 to-transparent z-10 rounded-r-full" />
 
-              <div className="flex w-max">
-                {/* Track 1 */}
-                <div
-                  className="flex items-center gap-1 sm:gap-1.5 shrink-0 animate-marquee-scroll pr-1 sm:pr-1.5"
-                  style={{
-                    animationPlayState: isTouchActive ? 'paused' : 'running',
-                  }}
-                >
-                  {[...CATEGORY_DOCK, ...CATEGORY_DOCK].map((cat, idx) => {
-                    const CatIcon = cat.Icon;
-                    return (
-                      <button
-                        key={`t1-${cat.label}-${idx}`}
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePromptClick(cat.query);
-                        }}
-                        className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-left transition-all duration-200 hover:bg-neutral-100/90 active:scale-95 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-brand-lime/40 transition-all">
-                          <CatIcon className="w-4 h-4 text-neutral-800 group-hover:text-brand-black transition-colors" strokeWidth={1.8} />
-                        </div>
-                        <div className="flex flex-col pr-1">
-                          <span className="text-xs font-bold text-brand-black leading-tight group-hover:text-black">
-                            {cat.label}
-                          </span>
-                          <span className="text-[10px] text-neutral-400 font-medium leading-tight flex items-center gap-1 group-hover:text-neutral-700">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            {cat.status}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Track 2 (Clone for mathematical infinite seamless continuous loop) */}
-                <div
-                  aria-hidden="true"
-                  className="flex items-center gap-1 sm:gap-1.5 shrink-0 animate-marquee-scroll pr-1 sm:pr-1.5"
-                  style={{
-                    animationPlayState: isTouchActive ? 'paused' : 'running',
-                  }}
-                >
-                  {[...CATEGORY_DOCK, ...CATEGORY_DOCK].map((cat, idx) => {
-                    const CatIcon = cat.Icon;
-                    return (
-                      <button
-                        key={`t2-${cat.label}-${idx}`}
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePromptClick(cat.query);
-                        }}
-                        className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-left transition-all duration-200 hover:bg-neutral-100/90 active:scale-95 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-brand-lime/40 transition-all">
-                          <CatIcon className="w-4 h-4 text-neutral-800 group-hover:text-brand-black transition-colors" strokeWidth={1.8} />
-                        </div>
-                        <div className="flex flex-col pr-1">
-                          <span className="text-xs font-bold text-brand-black leading-tight group-hover:text-black">
-                            {cat.label}
-                          </span>
-                          <span className="text-[10px] text-neutral-400 font-medium leading-tight flex items-center gap-1 group-hover:text-neutral-700">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            {cat.status}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+              <div
+                ref={dockScrollRef}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                onScroll={handleScroll}
+                className="relative w-full overflow-x-auto no-scrollbar flex items-center cursor-grab active:cursor-grabbing select-none py-0.5"
+                style={{
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  WebkitOverflowScrolling: 'touch',
+                  touchAction: 'pan-y',
+                }}
+              >
+                {[0, 1, 2].map((setIdx) => (
+                  <div
+                    key={`set-${setIdx}`}
+                    ref={setIdx === 0 ? firstSetRef : undefined}
+                    aria-hidden={setIdx > 0}
+                    className="flex items-center gap-1 sm:gap-1.5 shrink-0 pr-1 sm:pr-1.5"
+                  >
+                    {CATEGORY_DOCK.map((cat, idx) => {
+                      const CatIcon = cat.Icon;
+                      return (
+                        <button
+                          key={`set-${setIdx}-${cat.label}-${idx}`}
+                          type="button"
+                          onClick={() => handleCategoryItemClick(cat.query)}
+                          className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-left transition-all duration-200 hover:bg-neutral-100/90 active:scale-95 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-brand-lime/40 transition-all pointer-events-none">
+                            <CatIcon className="w-4 h-4 text-neutral-800 group-hover:text-brand-black transition-colors" strokeWidth={1.8} />
+                          </div>
+                          <div className="flex flex-col pr-1 pointer-events-none">
+                            <span className="text-xs font-bold text-brand-black leading-tight group-hover:text-black">
+                              {cat.label}
+                            </span>
+                            <span className="text-[10px] text-neutral-400 font-medium leading-tight flex items-center gap-1 group-hover:text-neutral-700">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              {cat.status}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
