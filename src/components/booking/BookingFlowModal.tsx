@@ -7,8 +7,8 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { BookingEngine } from '@/lib/booking/engine';
 import { store } from '@/lib/db/store';
-import { formatPrice, formatTime24to12, getTodayDateString, getTomorrowDateString, formatDatePretty } from '@/lib/utils';
-import { Clock, Calendar, ShieldCheck, CheckCircle2, User as UserIcon, Phone, Mail, FileText, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { cn, formatPrice, formatTime24to12, getTodayDateString, getTomorrowDateString, formatDatePretty } from '@/lib/utils';
+import { Clock, Calendar, ShieldCheck, CheckCircle2, User as UserIcon, Phone, Mail, FileText, AlertCircle, ArrowLeft, ArrowRight, ChevronDown, Check } from 'lucide-react';
 
 interface BookingFlowModalProps {
   isOpen: boolean;
@@ -31,10 +31,12 @@ export function BookingFlowModal({
   const todayStr = getTodayDateString();
   const tomorrowStr = getTomorrowDateString();
 
+  const businessServices = business ? store.getServicesByBusinessId(business.id) : [];
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
-  const [activeService, setActiveService] = useState<Service | null>(selectedService);
+  const [activeService, setActiveService] = useState<Service | null>(selectedService || businessServices[0] || null);
+  const [isSelectingService, setIsSelectingService] = useState(false);
 
   // Customer Contact Fields
   const [customerName, setCustomerName] = useState('');
@@ -56,14 +58,18 @@ export function BookingFlowModal({
       setStep(1);
       setErrorMessage(null);
       setSelectedSlot(null);
+      setIsSelectingService(!selectedService && businessServices.length > 1);
     }
   }, [isOpen]);
 
   useEffect(() => {
     if (selectedService) {
       setActiveService(selectedService);
+      setIsSelectingService(false);
+    } else if (businessServices.length > 0 && !activeService) {
+      setActiveService(businessServices[0]);
     }
-  }, [selectedService]);
+  }, [selectedService, business]);
 
   // Compute live available slots whenever date, business, or active service change
   useEffect(() => {
@@ -165,22 +171,119 @@ export function BookingFlowModal({
         {/* STEP 1 & 2: DATE & TIME SLOT SELECTION */}
         {(step === 1 || step === 2) && (
           <div className="space-y-6">
-            {/* Active Service Banner */}
-            {activeService && (
-              <div className="p-3.5 rounded-xl bg-brand-surface-alt border border-brand-border/80 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-brand-black">{activeService.name}</p>
-                  <p className="text-[11px] text-brand-secondary flex items-center gap-2 mt-0.5">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {activeService.durationMinutes} mins
-                    </span>
-                    {activeService.category && <span>• {activeService.category}</span>}
-                  </p>
-                </div>
-                <span className="text-sm font-bold text-brand-black">{formatPrice(activeService.price)}</span>
+            {/* Service Selection Section */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-brand-black uppercase tracking-wider block">
+                  Service
+                </label>
+                {businessServices.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsSelectingService(!isSelectingService)}
+                    className="text-xs font-bold text-brand-black hover:text-neutral-600 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <span>{isSelectingService ? 'Done' : 'Choose Service'}</span>
+                    <ChevronDown
+                      className={cn('w-3.5 h-3.5 transition-transform duration-200', isSelectingService && 'rotate-180')}
+                    />
+                  </button>
+                )}
               </div>
-            )}
+
+              {/* Service Cards / Expanded List */}
+              {isSelectingService && businessServices.length > 1 ? (
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1 no-scrollbar p-2 rounded-2xl bg-brand-surface-alt border border-brand-border">
+                  <div className="px-2 py-1 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                      Available Services ({businessServices.length})
+                    </span>
+                    <span className="text-[11px] text-neutral-400">Select one to book</span>
+                  </div>
+                  {businessServices.map((srv) => {
+                    const isSelected = activeService?.id === srv.id;
+                    return (
+                      <button
+                        key={srv.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveService(srv);
+                          setIsSelectingService(false);
+                          setSelectedSlot(null);
+                          setErrorMessage(null);
+                        }}
+                        className={cn(
+                          'w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer',
+                          isSelected
+                            ? 'border-brand-black bg-brand-black text-white shadow-xs'
+                            : 'border-brand-border bg-white hover:border-neutral-400 hover:bg-neutral-50 text-brand-black'
+                        )}
+                      >
+                        <div className="flex-1 pr-3">
+                          <div className="flex items-center gap-2">
+                            <p className={cn('text-xs font-bold', isSelected ? 'text-white' : 'text-brand-black')}>
+                              {srv.name}
+                            </p>
+                            {isSelected && (
+                              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-brand-lime text-brand-black">
+                                Selected
+                              </span>
+                            )}
+                          </div>
+                          <p className={cn('text-[11px] flex items-center gap-2 mt-0.5', isSelected ? 'text-neutral-300' : 'text-brand-secondary')}>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {srv.durationMinutes} mins
+                            </span>
+                            {srv.category && <span>• {srv.category}</span>}
+                          </p>
+                          {srv.description && (
+                            <p className={cn('text-[11px] line-clamp-1 mt-1 font-normal', isSelected ? 'text-neutral-300' : 'text-neutral-500')}>
+                              {srv.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className={cn('text-sm font-extrabold block', isSelected ? 'text-brand-lime' : 'text-brand-black')}>
+                            {formatPrice(srv.price)}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                activeService && (
+                  <div
+                    onClick={() => businessServices.length > 1 && setIsSelectingService(true)}
+                    className={cn(
+                      'p-3.5 rounded-xl bg-brand-surface-alt border border-brand-border/80 flex items-center justify-between transition-all',
+                      businessServices.length > 1 && 'cursor-pointer hover:border-neutral-400 hover:bg-white group shadow-2xs'
+                    )}
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-brand-black">{activeService.name}</p>
+                      <p className="text-[11px] text-brand-secondary flex items-center gap-2 mt-0.5">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {activeService.durationMinutes} mins
+                        </span>
+                        {activeService.category && <span>• {activeService.category}</span>}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-brand-black">{formatPrice(activeService.price)}</span>
+                      {businessServices.length > 1 && (
+                        <span className="text-[11px] font-bold text-brand-black bg-white px-2.5 py-1 rounded-lg border border-brand-border group-hover:border-brand-black group-hover:bg-brand-black group-hover:text-white transition-all flex items-center gap-1 shadow-2xs">
+                          Change
+                          <ChevronDown className="w-3 h-3" />
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
 
             {/* Date Picker Row */}
             <div>

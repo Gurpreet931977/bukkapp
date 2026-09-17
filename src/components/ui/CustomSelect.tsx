@@ -17,6 +17,7 @@ export interface CustomSelectProps {
   options: (string | SelectOption)[];
   placeholder?: string;
   label?: string;
+  labelClassName?: string;
   className?: string;
   buttonClassName?: string;
   dropdownClassName?: string;
@@ -33,6 +34,7 @@ export function CustomSelect({
   options,
   placeholder = 'Select an option',
   label,
+  labelClassName,
   className,
   buttonClassName,
   dropdownClassName,
@@ -171,10 +173,12 @@ export function CustomSelect({
     lg: 'text-sm px-3.5 py-2.5 rounded-xl min-h-[44px]',
   };
 
+  const SelectedIcon = selectedOption?.icon;
+
   return (
     <div ref={containerRef} className={cn('relative w-full text-left', className)} onKeyDown={handleKeyDown}>
       {label && (
-        <label htmlFor={selectId} className="text-[11px] font-bold text-brand-muted uppercase tracking-wider block mb-1">
+        <label htmlFor={selectId} className={cn('text-[11px] font-bold text-brand-muted uppercase tracking-wider block mb-1', labelClassName)}>
           {label}
         </label>
       )}
@@ -201,8 +205,8 @@ export function CustomSelect({
         )}
       >
         <span className="truncate flex items-center gap-2">
-          {selectedOption?.icon && (
-            <selectedOption.icon className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+          {SelectedIcon && (
+            <SelectedIcon className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
           )}
           <span className={cn(!selectedOption && 'text-neutral-400 font-normal')}>
             {selectedOption ? selectedOption.label : placeholder}

@@ -6,6 +6,7 @@ import { store } from '@/lib/db/store';
 import { Business } from '@/types';
 import { BusinessLayout } from '@/components/business/BusinessLayout';
 import { Button } from '@/components/ui/Button';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { DEHRADUN_NEIGHBORHOODS } from '@/lib/seed/data';
 import {
   Store,
@@ -206,17 +207,14 @@ export default function BusinessProfileEditorPage() {
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-brand-black uppercase tracking-wider">Neighborhood</label>
-              <select
+            <div>
+              <CustomSelect
+                label="Neighborhood"
                 value={neighborhood}
-                onChange={(e) => setNeighborhood(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black bg-white text-brand-black font-semibold"
-              >
-                {DEHRADUN_NEIGHBORHOODS.slice(1).map((hood) => (
-                  <option key={hood} value={hood}>{hood}</option>
-                ))}
-              </select>
+                onChange={setNeighborhood}
+                options={DEHRADUN_NEIGHBORHOODS.slice(1)}
+                searchable
+              />
             </div>
 
             <div className="space-y-1">

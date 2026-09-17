@@ -7,6 +7,7 @@ import { Business, Booking, Service, BlockedTime } from '@/types';
 import { BusinessLayout } from '@/components/business/BusinessLayout';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { formatPrice, formatTime24to12, formatDatePretty } from '@/lib/utils';
 import {
   CalendarCheck,
@@ -547,19 +548,16 @@ export default function BusinessDashboardPage() {
                 className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black"
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-brand-black uppercase tracking-wider">Service</label>
-              <select
+            <div>
+              <CustomSelect
+                label="Service"
                 value={manualServiceId}
-                onChange={(e) => setManualServiceId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black bg-white"
-              >
-                {services.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({formatPrice(s.price)})
-                  </option>
-                ))}
-              </select>
+                onChange={setManualServiceId}
+                options={services.map((s) => ({
+                  label: `${s.name} (${formatPrice(s.price)})`,
+                  value: s.id,
+                }))}
+              />
             </div>
           </div>
 
@@ -637,20 +635,20 @@ export default function BusinessDashboardPage() {
                 className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black"
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-brand-black uppercase tracking-wider">Duration (Minutes)</label>
-              <select
+            <div>
+              <CustomSelect
+                label="Duration"
                 value={newServiceDuration}
-                onChange={(e) => setNewServiceDuration(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black bg-white"
-              >
-                <option value="15">15 mins</option>
-                <option value="30">30 mins</option>
-                <option value="45">45 mins</option>
-                <option value="60">60 mins</option>
-                <option value="90">90 mins</option>
-                <option value="120">120 mins</option>
-              </select>
+                onChange={setNewServiceDuration}
+                options={[
+                  { label: '15 mins', value: '15' },
+                  { label: '30 mins', value: '30' },
+                  { label: '45 mins', value: '45' },
+                  { label: '60 mins', value: '60' },
+                  { label: '90 mins', value: '90' },
+                  { label: '120 mins', value: '120' },
+                ]}
+              />
             </div>
           </div>
 

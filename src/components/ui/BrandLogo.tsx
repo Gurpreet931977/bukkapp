@@ -32,14 +32,14 @@ export function BrandMark({
   if (theme === 'dark') {
     return (
       <div
-        className={`relative inline-flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 ${className}`}
+        className={`relative inline-flex items-center justify-center shrink-0 rounded-full bg-white shadow-2xs p-1 transition-transform duration-200 group-hover:scale-105 ${className}`}
         style={{ width: size, height: size }}
         aria-hidden="true"
       >
         <img
-          src="/logos/secondary-logomark-dark.png"
+          src="/logos/secondary-logomark.png"
           alt="BUKKAPP Mark"
-          className="w-full h-full object-contain"
+          className="w-[82%] h-[82%] object-contain"
           loading="eager"
         />
       </div>
@@ -70,20 +70,22 @@ export function BrandMark({
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
-      {/* Light Mode: Black checkmark */}
+      {/* Light Mode: Standard Logomark */}
       <img
         src="/logos/secondary-logomark.png"
         alt="BUKKAPP Mark"
         className="w-full h-full object-contain logomark-light"
         loading="eager"
       />
-      {/* Dark Mode: White checkmark */}
-      <img
-        src="/logos/secondary-logomark-dark.png"
-        alt="BUKKAPP Mark"
-        className="w-full h-full object-contain logomark-dark"
-        loading="eager"
-      />
+      {/* Dark Mode: Over White Circle for 100% Contrast & Visibility */}
+      <div className="w-full h-full rounded-full bg-white shadow-2xs items-center justify-center p-1 logomark-dark">
+        <img
+          src="/logos/secondary-logomark.png"
+          alt="BUKKAPP Mark"
+          className="w-[82%] h-[82%] object-contain"
+          loading="eager"
+        />
+      </div>
     </div>
   );
 }
@@ -126,7 +128,7 @@ export function DoublePHighlight({
 export function BrandLogo({
   size = 'md',
   theme = 'auto',
-  withIcon = false,
+  withIcon = true,
   withTagline = false,
   taglineText = 'Universal Local Booking',
   href,

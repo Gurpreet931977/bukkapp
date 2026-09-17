@@ -6,6 +6,7 @@ import { Business, Booking, Service } from '@/types';
 import { BusinessLayout } from '@/components/business/BusinessLayout';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { formatPrice, formatTime24to12, formatDatePretty } from '@/lib/utils';
 import {
   CalendarCheck,
@@ -312,19 +313,16 @@ export default function BusinessBookingsPage() {
                 className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black"
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-brand-black uppercase tracking-wider">Service</label>
-              <select
+            <div>
+              <CustomSelect
+                label="Service"
                 value={manualServiceId}
-                onChange={(e) => setManualServiceId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black bg-white"
-              >
-                {services.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({formatPrice(s.price)})
-                  </option>
-                ))}
-              </select>
+                onChange={setManualServiceId}
+                options={services.map((s) => ({
+                  label: `${s.name} (${formatPrice(s.price)})`,
+                  value: s.id,
+                }))}
+              />
             </div>
           </div>
 

@@ -113,6 +113,68 @@ export const INITIAL_CATEGORIES: Category[] = [
   },
 ];
 
+export const SUBCATEGORY_PRESETS: Record<string, string[]> = {
+  'health-wellness': [
+    'Dental Clinic',
+    'Physiotherapy & Rehab',
+    'Ayurveda & Spa',
+    'Diagnostic Lab & Pathology',
+    'Mental Wellness & Therapy',
+    'Eye Care & Optometry',
+    'Dermatology & Skin Clinic',
+    'Orthopedic & Spine Care',
+    'Nutrition & Dietetics',
+  ],
+  'beauty-grooming': [
+    'Men Grooming Lounge',
+    'Unisex Salon',
+    'Luxury Spa & Massage',
+    'Nail & Lash Studio',
+    'Bridal & Makeup Studio',
+    'Skin & Aesthetic Clinic',
+    'Hair Stylist & Color Bar',
+    'Tattoo & Piercing Studio',
+  ],
+  'fitness-sports': [
+    'Pickleball Arena',
+    'Badminton & Squash Academy',
+    'Turf Football / Cricket',
+    'Crossfit Gym',
+    'Yoga & Pilates Studio',
+    'Swimming & Aquatic Club',
+    'Strength & Fitness Gym',
+    'Boxing & Martial Arts Academy',
+  ],
+  'home-services': [
+    'AC & Appliance Care',
+    'Electrician & Wiring',
+    'Plumbing & Sanitation',
+    'Home Cleaning & Deep Wash',
+    'Pest Control & Disinfection',
+    'Carpentry & Woodwork',
+    'Painting & Waterproofing',
+    'CCTV & Security Systems',
+  ],
+  'auto-care': [
+    'Car Spa & Detailing',
+    'Ceramic & PPF Studio',
+    'Car Service & Mechanical',
+    'Superbike & Two-Wheeler Care',
+    'Wheel Alignment & Tyres',
+    'Denting & Paint Studio',
+    'Auto Electrical & Diagnostics',
+  ],
+};
+
+export function getSubcategoryPresets(categoryId: string): string[] {
+  return SUBCATEGORY_PRESETS[categoryId] || [
+    'General Services',
+    'Consultation & Diagnostics',
+    'Premium Studio',
+    'On-Site / Doorstep Service',
+  ];
+}
+
 export const INITIAL_RESOURCES: Resource[] = [
   { id: 'res-zpc-c1', businessId: 'biz-zenith-pickleball', name: 'Court 1 (Pro Championship)', type: 'court', active: true },
   { id: 'res-zpc-c2', businessId: 'biz-zenith-pickleball', name: 'Court 2 (Cushioned Acrylic)', type: 'court', active: true },

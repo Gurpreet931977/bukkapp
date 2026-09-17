@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { store } from '@/lib/db/store';
 import { Button } from '@/components/ui/Button';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { INITIAL_CATEGORIES, DEHRADUN_NEIGHBORHOODS } from '@/lib/seed/data';
+import { INITIAL_CATEGORIES, DEHRADUN_NEIGHBORHOODS, getSubcategoryPresets } from '@/lib/seed/data';
 import {
   Store,
   Layers,
@@ -25,7 +25,9 @@ export default function BusinessOnboardingPage() {
   // Form State
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState(INITIAL_CATEGORIES[0].id);
-  const [subcategory, setSubcategory] = useState('');
+  const [subcategory, setSubcategory] = useState(getSubcategoryPresets(INITIAL_CATEGORIES[0].id)[0] || '');
+  const [isCustomSubcategory, setIsCustomSubcategory] = useState(false);
+  const [customSubcategoryText, setCustomSubcategoryText] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
@@ -57,8 +59,16 @@ export default function BusinessOnboardingPage() {
       if (saved) {
         const d = JSON.parse(saved);
         if (d.name) setName(d.name);
+        const restoredCatId = d.categoryId || INITIAL_CATEGORIES[0].id;
         if (d.categoryId) setCategoryId(d.categoryId);
-        if (d.subcategory) setSubcategory(d.subcategory);
+        if (d.subcategory) {
+          setSubcategory(d.subcategory);
+          const presets = getSubcategoryPresets(restoredCatId);
+          if (!presets.includes(d.subcategory)) {
+            setIsCustomSubcategory(true);
+            setCustomSubcategoryText(d.subcategory);
+          }
+        }
         if (d.phone) setPhone(d.phone);
         if (d.email) setEmail(d.email);
         if (d.address) setAddress(d.address);
@@ -127,6 +137,38 @@ export default function BusinessOnboardingPage() {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
+  const activePresets = getSubcategoryPresets(categoryId);
+  const subcategoryOptions = [
+    ...activePresets.map((preset) => ({
+      label: preset,
+      value: preset,
+    })),
+    {
+      label: '+ Other (Specify Custom)',
+      value: '__custom__',
+    },
+  ];
+
+  const handleCategoryChange = (newCatId: string) => {
+    setCategoryId(newCatId);
+    if (!isCustomSubcategory) {
+      const presets = getSubcategoryPresets(newCatId);
+      if (presets.length > 0) {
+        setSubcategory(presets[0]);
+      }
+    }
+  };
+
+  const handleSubcategorySelect = (val: string) => {
+    if (val === '__custom__') {
+      setIsCustomSubcategory(true);
+      setSubcategory(customSubcategoryText || '');
+    } else {
+      setIsCustomSubcategory(false);
+      setSubcategory(val);
+    }
+  };
+
   const handleSubmitForReview = () => {
     localStorage.removeItem('bukkapp_onboarding_draft');
     setIsSubmitting(true);
@@ -153,7 +195,7 @@ export default function BusinessOnboardingPage() {
       description: description.trim() || 'Professional booking service on BUKKAPP.',
       categoryId: category.id,
       categoryName: category.name,
-      subcategory: subcategory.trim() || category.popularServices[0] || 'Service',
+      subcategory: subcategory.trim() || getSubcategoryPresets(category.id)[0] || 'Service',
       address: address.trim() || 'Rajpur Road, Dehradun',
       neighborhood,
       city: 'Dehradun',
@@ -256,21 +298,73 @@ export default function BusinessOnboardingPage() {
                     <CustomSelect
                       label="Category"
                       value={categoryId}
-                      onChange={setCategoryId}
+                      onChange={handleCategoryChange}
                       options={INITIAL_CATEGORIES.map((c) => ({ label: c.name, value: c.id }))}
                       size="lg"
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-black uppercase tracking-wider block mb-1">Subcategory</label>
-                    <input
-                      type="text"
-                      value={subcategory}
-                      onChange={(e) => setSubcategory(e.target.value)}
-                      placeholder="e.g. Pickleball Arena, Dental Clinic"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black text-brand-black min-h-[44px]"
+                  <div>
+                    <CustomSelect
+                      label="Subcategory"
+                      value={isCustomSubcategory ? '__custom__' : subcategory}
+                      onChange={handleSubcategorySelect}
+                      options={subcategoryOptions}
+                      placeholder="Select subcategory"
+                      searchable
+                      size="lg"
                     />
+
+                    {isCustomSubcategory && (
+                      <div className="space-y-1 mt-2.5">
+                        <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider block">
+                          Specify Custom Subcategory
+                        </label>
+                        <input
+                          type="text"
+                          autoFocus
+                          value={customSubcategoryText}
+                          onChange={(e) => {
+                            setCustomSubcategoryText(e.target.value);
+                            setSubcategory(e.target.value);
+                          }}
+                          placeholder="e.g. Pet Grooming & Spa, Music Studio"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black text-brand-black min-h-[44px] bg-white font-medium shadow-2xs"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Subcategory Presets Quick-Pills */}
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-brand-muted uppercase tracking-wider">
+                      Popular {INITIAL_CATEGORIES.find((c) => c.id === categoryId)?.name} Presets
+                    </span>
+                    <span className="text-[11px] text-neutral-400">Click to choose</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activePresets.map((preset) => {
+                      const isSelected = !isCustomSubcategory && subcategory === preset;
+                      return (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => {
+                            setIsCustomSubcategory(false);
+                            setSubcategory(preset);
+                          }}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all border cursor-pointer ${
+                            isSelected
+                              ? 'bg-brand-black text-brand-lime border-brand-black shadow-xs'
+                              : 'bg-white text-neutral-600 border-brand-border hover:border-neutral-400 hover:text-brand-black'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

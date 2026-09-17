@@ -22,6 +22,8 @@ import {
   Leaf,
   TrendingUp,
   Compass,
+  Flame,
+  HeartPulse,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -85,6 +87,8 @@ const CATEGORY_DOCK: CategoryDockItem[] = [
   { label: 'AC Service', Icon: Wind, status: 'Same-day', query: 'ac repair' },
   { label: 'Detailing', Icon: CarFront, status: 'Top rated', query: 'detailing' },
   { label: 'Wellness', Icon: Leaf, status: '5 spas', query: 'spa' },
+  { label: 'Fitness', Icon: Flame, status: 'Live slots', query: 'gym' },
+  { label: 'Pet Care', Icon: HeartPulse, status: 'Available', query: 'veterinary' },
 ];
 
 export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: HeroSectionProps) {
@@ -95,6 +99,9 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [kineticIndex, setKineticIndex] = useState(0);
   const [isPassModalOpen, setIsPassModalOpen] = useState(false);
+
+  // Marquee pause state for category dock
+  const [isDockPaused, setIsDockPaused] = useState(false);
 
   // Rotating suggestion carousel (3.6s cadence for relaxed readability)
   useEffect(() => {
@@ -327,24 +334,31 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
             </h1>
 
             {/* Kinetic Discovery Pill Ticker (Fixed Height, Locked Layout) */}
-            <div className="flex items-center justify-center flex-wrap gap-2 text-sm sm:text-base md:text-lg text-brand-secondary font-medium min-h-[36px]">
+            <div className="flex items-center justify-center flex-wrap gap-2.5 text-sm sm:text-base md:text-lg text-brand-secondary font-semibold min-h-[42px]">
               <span>Real-time availability for</span>
-              <span className="inline-flex items-center h-8 overflow-hidden relative">
+              <span className="inline-flex items-center min-h-[38px] overflow-visible relative">
                 {(() => {
                   const CurrentIcon = KINETIC_SERVICES[kineticIndex].Icon;
                   return (
-                    <span
+                    <button
                       key={kineticIndex}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white border border-neutral-200/90 text-brand-black font-bold text-xs sm:text-sm shadow-subtle animate-kinetic-flip whitespace-nowrap"
+                      type="button"
+                      onClick={() => handlePromptClick(KINETIC_SERVICES[kineticIndex].name)}
+                      className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-lime text-brand-black font-extrabold text-xs sm:text-sm md:text-base border border-brand-black/20 shadow-[0_4px_18px_rgba(218,255,0,0.55),0_1px_3px_rgba(0,0,0,0.1)] ring-2 ring-brand-lime/50 animate-category-highlight whitespace-nowrap select-none hover:scale-105 hover:shadow-[0_6px_22px_rgba(218,255,0,0.7)] transition-transform cursor-pointer"
+                      title={`Search ${KINETIC_SERVICES[kineticIndex].name}`}
                     >
-                      <CurrentIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-black shrink-0" />
-                      <span>{KINETIC_SERVICES[kineticIndex].name}</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                    </span>
+                      <span className="w-5 h-5 sm:w-5.5 sm:h-5.5 rounded-full bg-brand-black text-brand-lime flex items-center justify-center shrink-0 shadow-2xs">
+                        <CurrentIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-brand-lime" />
+                      </span>
+                      <span className="tracking-tight text-brand-black font-black">{KINETIC_SERVICES[kineticIndex].name}</span>
+                      <span className="relative flex h-2 w-2 shrink-0 ml-0.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-black opacity-60" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-black" />
+                      </span>
+                    </button>
                   );
                 })()}
               </span>
-              <span>in Dehradun.</span>
             </div>
           </div>
 
@@ -405,10 +419,10 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                     className="absolute left-11 sm:left-12 right-12 sm:right-24 top-0 bottom-0 flex items-center pointer-events-none text-xs sm:text-sm md:text-base text-neutral-400 select-none overflow-hidden whitespace-nowrap"
                   >
                     <span className="shrink-0 font-normal text-neutral-400">Search&nbsp;</span>
-                    <span className="inline-flex items-center overflow-hidden h-6 relative font-medium text-neutral-800 whitespace-nowrap">
+                    <span className="inline-flex items-center overflow-hidden h-6 relative font-normal text-neutral-400 whitespace-nowrap">
                       <span
                         key={suggestionIndex}
-                        className="animate-kinetic-flip inline-flex items-center whitespace-nowrap text-brand-black"
+                        className="animate-kinetic-flip inline-flex items-center whitespace-nowrap text-neutral-400"
                       >
                         &ldquo;{ROTATING_SUGGESTIONS[suggestionIndex]}&rdquo;
                       </span>
@@ -541,33 +555,91 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
             )}
           </div>
 
-          {/* Visual Category Pill Dock with Live Status Indicators (Zero Scrollbar, Squircle Tiles) */}
-          <div className="pt-2 max-w-full flex justify-center">
-            <div className="inline-flex items-center gap-1 sm:gap-1.5 p-1.5 rounded-2xl bg-white/95 backdrop-blur-xl border border-neutral-200/80 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] overflow-x-auto no-scrollbar max-w-full">
-              {CATEGORY_DOCK.map((cat) => {
-                const CatIcon = cat.Icon;
-                return (
-                  <button
-                    key={cat.label}
-                    type="button"
-                    onClick={() => handlePromptClick(cat.query)}
-                    className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-left transition-all duration-200 hover:bg-neutral-100/80 active:scale-95 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-neutral-100/90 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-brand-lime/40 transition-all">
-                      <CatIcon className="w-4 h-4 text-neutral-800 group-hover:text-brand-black transition-colors" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-brand-black leading-tight group-hover:text-black">
-                        {cat.label}
-                      </span>
-                      <span className="text-[10px] text-neutral-400 font-medium leading-tight flex items-center gap-1 group-hover:text-neutral-700">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        {cat.status}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
+          {/* Visual Category Pill Dock - Automatic Continuous Marquee in Infinite Loop */}
+          <div className="pt-2 w-full max-w-4xl mx-auto flex justify-center px-2 sm:px-4">
+            <div
+              className="group/marquee relative w-full max-w-full overflow-hidden rounded-full bg-white/95 backdrop-blur-xl border border-neutral-200/80 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-1.5 cursor-pointer select-none"
+              onMouseEnter={() => setIsDockPaused(true)}
+              onMouseLeave={() => setIsDockPaused(false)}
+            >
+              {/* Soft Edge Gradient Fade Masks for seamless entrance/exit */}
+              <div className="pointer-events-none absolute left-0 inset-y-0 w-8 sm:w-12 bg-gradient-to-r from-white via-white/80 to-transparent z-10 rounded-l-full" />
+              <div className="pointer-events-none absolute right-0 inset-y-0 w-8 sm:w-12 bg-gradient-to-l from-white via-white/80 to-transparent z-10 rounded-r-full" />
+
+              <div className="flex w-max">
+                {/* Track 1 */}
+                <div
+                  className="flex items-center gap-1 sm:gap-1.5 shrink-0 animate-marquee-scroll group-hover/marquee:[animation-play-state:paused] pr-1 sm:pr-1.5"
+                  style={{
+                    animationPlayState: isDockPaused ? 'paused' : 'running',
+                  }}
+                >
+                  {[...CATEGORY_DOCK, ...CATEGORY_DOCK].map((cat, idx) => {
+                    const CatIcon = cat.Icon;
+                    return (
+                      <button
+                        key={`t1-${cat.label}-${idx}`}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePromptClick(cat.query);
+                        }}
+                        className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-left transition-all duration-200 hover:bg-neutral-100/90 active:scale-95 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-brand-lime/40 transition-all">
+                          <CatIcon className="w-4 h-4 text-neutral-800 group-hover:text-brand-black transition-colors" strokeWidth={1.8} />
+                        </div>
+                        <div className="flex flex-col pr-1">
+                          <span className="text-xs font-bold text-brand-black leading-tight group-hover:text-black">
+                            {cat.label}
+                          </span>
+                          <span className="text-[10px] text-neutral-400 font-medium leading-tight flex items-center gap-1 group-hover:text-neutral-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            {cat.status}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Track 2 (Clone for mathematical infinite seamless continuous loop) */}
+                <div
+                  aria-hidden="true"
+                  className="flex items-center gap-1 sm:gap-1.5 shrink-0 animate-marquee-scroll group-hover/marquee:[animation-play-state:paused] pr-1 sm:pr-1.5"
+                  style={{
+                    animationPlayState: isDockPaused ? 'paused' : 'running',
+                  }}
+                >
+                  {[...CATEGORY_DOCK, ...CATEGORY_DOCK].map((cat, idx) => {
+                    const CatIcon = cat.Icon;
+                    return (
+                      <button
+                        key={`t2-${cat.label}-${idx}`}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePromptClick(cat.query);
+                        }}
+                        className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-left transition-all duration-200 hover:bg-neutral-100/90 active:scale-95 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-brand-lime/40 transition-all">
+                          <CatIcon className="w-4 h-4 text-neutral-800 group-hover:text-brand-black transition-colors" strokeWidth={1.8} />
+                        </div>
+                        <div className="flex flex-col pr-1">
+                          <span className="text-xs font-bold text-brand-black leading-tight group-hover:text-black">
+                            {cat.label}
+                          </span>
+                          <span className="text-[10px] text-neutral-400 font-medium leading-tight flex items-center gap-1 group-hover:text-neutral-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            {cat.status}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 

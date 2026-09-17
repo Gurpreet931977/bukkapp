@@ -75,10 +75,15 @@ export function Navbar() {
 
           {/* RIGHT: CTAs & User Menu */}
           <div className="flex items-center gap-3">
-            {/* List Your Business Button */}
+            {/* List Your Business Button (Highlighted in Brand Lime) */}
             <Link href="/business/onboarding" className="hidden sm:inline-flex">
-              <Button variant="outline" size="sm" className="font-bold text-xs border-brand-border hover:border-brand-black">
-                List your business
+              <Button
+                variant="accent"
+                size="sm"
+                className="font-extrabold text-xs px-4 py-2 rounded-full border border-brand-black/15 hover:border-brand-black shadow-xs hover:shadow-lime transition-all duration-200 gap-1.5 btn-press"
+              >
+                <Store className="w-3.5 h-3.5 text-brand-black" />
+                <span>List your business</span>
               </Button>
             </Link>
 
@@ -257,8 +262,9 @@ export function Navbar() {
 
             <div className="pt-2 border-t border-brand-border">
               <Link href="/business/onboarding" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="accent" size="md" className="w-full justify-center text-xs font-bold">
-                  List your business
+                <Button variant="accent" size="md" className="w-full justify-center text-xs font-extrabold gap-2 shadow-xs">
+                  <Store className="w-4 h-4 text-brand-black" />
+                  <span>List your business</span>
                 </Button>
               </Link>
             </div>
