@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export interface BrandLogoProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'display';
-  theme?: 'light' | 'dark' | 'lime' | 'monochrome';
+  theme?: 'auto' | 'light' | 'dark' | 'lime' | 'monochrome';
   withIcon?: boolean;
   withTagline?: boolean;
   taglineText?: string;
@@ -16,30 +16,72 @@ export interface BrandLogoProps {
 
 /**
  * Brand Logomark Icon
- * Renders the official checkmark + electric-lime streak logomark.
+ * Dynamically renders the official checkmark + electric-lime streak logomark:
+ * - In light mode / light backgrounds: Black checkmark
+ * - In dark mode / dark backgrounds: White checkmark
  */
 export function BrandMark({
   size = 28,
-  theme = 'light',
+  theme = 'auto',
   className = '',
 }: {
   size?: number;
-  theme?: 'light' | 'dark' | 'lime' | 'monochrome';
+  theme?: 'auto' | 'light' | 'dark' | 'lime' | 'monochrome';
   className?: string;
 }) {
-  const isDark = theme === 'dark';
-  const logoSrc = isDark ? '/logos/secondary-logomark-dark.png' : '/logos/secondary-logomark.png';
+  if (theme === 'dark') {
+    return (
+      <div
+        className={`relative inline-flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 ${className}`}
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      >
+        <img
+          src="/logos/secondary-logomark-dark.png"
+          alt="BUKKAPP Mark"
+          className="w-full h-full object-contain"
+          loading="eager"
+        />
+      </div>
+    );
+  }
 
+  if (theme === 'light') {
+    return (
+      <div
+        className={`relative inline-flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 ${className}`}
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      >
+        <img
+          src="/logos/secondary-logomark.png"
+          alt="BUKKAPP Mark"
+          className="w-full h-full object-contain"
+          loading="eager"
+        />
+      </div>
+    );
+  }
+
+  // Dynamic Auto (switches based on system dark mode, Tailwind .dark, or dark parent background)
   return (
     <div
       className={`relative inline-flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 ${className}`}
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
+      {/* Light Mode: Black checkmark */}
       <img
-        src={logoSrc}
+        src="/logos/secondary-logomark.png"
         alt="BUKKAPP Mark"
-        className="w-full h-full object-contain"
+        className="w-full h-full object-contain logomark-light"
+        loading="eager"
+      />
+      {/* Dark Mode: White checkmark */}
+      <img
+        src="/logos/secondary-logomark-dark.png"
+        alt="BUKKAPP Mark"
+        className="w-full h-full object-contain logomark-dark"
         loading="eager"
       />
     </div>
@@ -78,11 +120,12 @@ export function DoublePHighlight({
 
 /**
  * Master Brand Logo Component
- * Renders the official BUKKAPP wordmark logo with optional secondary logomark.
+ * Dynamically renders the official BUKKAPP wordmark logo with optional secondary logomark.
+ * Automatically adapts between black (light mode) and white (dark mode).
  */
 export function BrandLogo({
   size = 'md',
-  theme = 'light',
+  theme = 'auto',
   withIcon = false,
   withTagline = false,
   taglineText = 'Universal Local Booking',
@@ -90,9 +133,6 @@ export function BrandLogo({
   className = '',
   interactive = true,
 }: BrandLogoProps) {
-  const isDark = theme === 'dark';
-  const logoSrc = isDark ? '/logos/primary-wordmark-dark.png' : '/logos/primary-wordmark.png';
-
   const heightClasses = {
     xs: 'h-5',
     sm: 'h-6',
@@ -122,17 +162,41 @@ export function BrandLogo({
       {withIcon && <BrandMark size={iconSizes} theme={theme} />}
 
       <div className="flex flex-col justify-center">
-        <img
-          src={logoSrc}
-          alt="BUKKAPP"
-          className={`${heightClasses} w-auto object-contain transition-transform duration-200 group-hover:scale-[1.01]`}
-          loading="eager"
-        />
+        {theme === 'dark' ? (
+          <img
+            src="/logos/primary-wordmark-dark.png"
+            alt="BUKKAPP"
+            className={`${heightClasses} w-auto object-contain transition-transform duration-200 group-hover:scale-[1.01]`}
+            loading="eager"
+          />
+        ) : theme === 'light' ? (
+          <img
+            src="/logos/primary-wordmark.png"
+            alt="BUKKAPP"
+            className={`${heightClasses} w-auto object-contain transition-transform duration-200 group-hover:scale-[1.01]`}
+            loading="eager"
+          />
+        ) : (
+          <>
+            <img
+              src="/logos/primary-wordmark.png"
+              alt="BUKKAPP"
+              className={`${heightClasses} w-auto object-contain transition-transform duration-200 group-hover:scale-[1.01] logomark-light`}
+              loading="eager"
+            />
+            <img
+              src="/logos/primary-wordmark-dark.png"
+              alt="BUKKAPP"
+              className={`${heightClasses} w-auto object-contain transition-transform duration-200 group-hover:scale-[1.01] logomark-dark`}
+              loading="eager"
+            />
+          </>
+        )}
 
         {withTagline && (
           <span
             className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 ${
-              isDark ? 'text-neutral-400' : 'text-brand-muted'
+              theme === 'dark' ? 'text-neutral-400' : 'text-brand-muted dark:text-neutral-400'
             }`}
           >
             {taglineText}

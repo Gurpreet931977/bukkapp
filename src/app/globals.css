@@ -28,6 +28,64 @@ p, span, label, input, button, select, textarea, .font-body {
   font-family: var(--font-body);
 }
 
+/* Eliminate browser default blue focus outline */
+input,
+textarea,
+select,
+button {
+  outline: none;
+}
+
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+button:focus,
+button:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  box-shadow: none;
+}
+
+/* Dynamic Brand Logo & Mark Switching (Light vs. Dark Mode) */
+.logomark-light {
+  display: block;
+}
+.logomark-dark {
+  display: none;
+}
+
+/* 1. When Tailwind .dark class, data-theme='dark', or dark container is active */
+.dark .logomark-light,
+[data-theme='dark'] .logomark-light,
+.dark-context .logomark-light,
+.bg-brand-black .logomark-light,
+.bg-neutral-900 .logomark-light,
+.bg-black .logomark-light {
+  display: none !important;
+}
+
+.dark .logomark-dark,
+[data-theme='dark'] .logomark-dark,
+.dark-context .logomark-dark,
+.bg-brand-black .logomark-dark,
+.bg-neutral-900 .logomark-dark,
+.bg-black .logomark-dark {
+  display: block !important;
+}
+
+/* 2. When system preference is dark mode (unless .light class explicitly overrides) */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .logomark-light {
+    display: none;
+  }
+  :root:not(.light) .logomark-dark {
+    display: block;
+  }
+}
+
+
 /* Fluid Responsive Typography Tokens */
 .display-xl {
   font-family: var(--font-display);
@@ -201,6 +259,26 @@ p, span, label, input, button, select, textarea, .font-body {
   animation: pulse-live 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   z-index: 0;
 }
+
+/* Ambient Search Bar Shimmer & Cursor */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  50%, 100% { transform: translateX(200%) skewX(-20deg); }
+}
+
+.animate-shimmer-sweep {
+  animation: shimmer-sweep 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-cursor {
+  animation: cursor-blink 0.85s infinite;
+}
+
 
 /* Reduced Motion Accessibility */
 @media (prefers-reduced-motion: reduce) {
