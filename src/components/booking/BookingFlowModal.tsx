@@ -193,7 +193,7 @@ export function BookingFlowModal({
 
               {/* Service Cards / Expanded List */}
               {isSelectingService && businessServices.length > 1 ? (
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-1 no-scrollbar p-2 rounded-2xl bg-brand-surface-alt border border-brand-border">
+                <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1 p-2.5 rounded-2xl bg-brand-surface-alt border border-brand-border">
                   <div className="px-2 py-1 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
                       Available Services ({businessServices.length})
