@@ -13,7 +13,7 @@ import {
   CalendarCheck,
   Users,
   Layers,
-  Star,
+  MessageSquare,
   FileText,
   CheckCircle2,
   AlertTriangle,
@@ -174,7 +174,7 @@ export default function AdminConsolePage() {
             { key: 'businesses', label: `Businesses (${businesses.length})`, icon: Store },
             { key: 'bookings', label: `Bookings (${bookings.length})`, icon: CalendarCheck },
             { key: 'categories', label: `Categories (${categories.length})`, icon: Layers },
-            { key: 'reviews', label: `Reviews (${reviews.length})`, icon: Star },
+            { key: 'reviews', label: `Reviews (${reviews.length})`, icon: MessageSquare },
             { key: 'users', label: `Users (${users.length})`, icon: Users },
             { key: 'audit', label: `Audit Log (${auditLogs.length})`, icon: FileText },
           ].map((tab) => {
@@ -385,8 +385,8 @@ export default function AdminConsolePage() {
                         <td className="py-3.5 pr-4 text-brand-secondary font-semibold">{b.subcategory}</td>
                         <td className="py-3.5 pr-4 text-brand-secondary">{b.neighborhood}</td>
                         <td className="py-3.5 pr-4">
-                          <div className="flex items-center gap-1 font-bold text-brand-black">
-                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          <div className="flex items-center gap-1.5 font-bold text-brand-black">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                             <span>{b.rating}</span>
                             <span className="text-[10px] text-neutral-400 font-normal">({b.reviewCount})</span>
                           </div>
@@ -595,9 +595,9 @@ export default function AdminConsolePage() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-extrabold text-xs text-brand-black">{rev.userName}</span>
-                      <span className="flex items-center gap-0.5 text-xs font-bold text-brand-black">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                        <span>{rev.rating}</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
+                        <span className="w-1 h-1 rounded-full bg-emerald-600" />
+                        <span>{rev.rating}.0</span>
                       </span>
                       {rev.isHidden && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800">

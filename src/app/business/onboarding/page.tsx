@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   ArrowRight,
   ArrowLeft,
-  Sparkles,
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 

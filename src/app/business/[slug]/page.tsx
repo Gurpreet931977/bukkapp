@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/Button';
 import { BookingFlowModal } from '@/components/booking/BookingFlowModal';
 import { BusinessCard } from '@/components/business/BusinessCard';
 import {
-  Star,
   MapPin,
   Clock,
   Navigation,
@@ -186,8 +185,8 @@ export default function BusinessProfilePage() {
             </p>
 
             <div className="pt-2 flex flex-wrap items-center gap-4 text-xs text-brand-muted">
-              <div className="flex items-center gap-1 font-bold text-brand-black">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <div className="flex items-center gap-1.5 font-bold text-brand-black bg-neutral-100 px-2 py-0.5 rounded-md border border-neutral-200/80">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <span>{business.rating}</span>
                 <span className="text-neutral-400 font-normal">({business.reviewCount} reviews)</span>
               </div>
@@ -317,9 +316,10 @@ export default function BusinessProfilePage() {
                     Reviews from customers who completed bookings through BUKKAPP
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 bg-brand-surface-alt px-3 py-1.5 rounded-xl border border-brand-border">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <div className="flex items-center gap-1.5 bg-neutral-100 px-3 py-1.5 rounded-xl border border-neutral-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span className="text-sm font-black text-brand-black">{business.rating}</span>
+                  <span className="text-xs text-neutral-400 font-medium">/ 5.0</span>
                 </div>
               </div>
 
@@ -338,10 +338,9 @@ export default function BusinessProfilePage() {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-0.5">
-                        {[...Array(rev.rating)].map((_, i) => (
-                          <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-                        ))}
+                      <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-neutral-100 border border-neutral-200 text-xs font-bold text-brand-black">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span>{rev.rating}.0</span>
                       </div>
                     </div>
 

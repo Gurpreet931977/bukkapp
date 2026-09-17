@@ -7,7 +7,6 @@ import { BusinessLayout } from '@/components/business/BusinessLayout';
 import { Button } from '@/components/ui/Button';
 import { formatDatePretty } from '@/lib/utils';
 import {
-  Star,
   MessageSquare,
   CornerDownRight,
   CheckCircle2,
@@ -67,10 +66,9 @@ export default function BusinessReviewsPage() {
                 {business.rating}
               </div>
               <div>
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  ))}
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Verified Rating Score</span>
                 </div>
                 <p className="text-xs text-brand-secondary mt-1">
                   Based on <strong className="text-brand-black">{reviews.length} verified customer reviews</strong>
@@ -104,10 +102,9 @@ export default function BusinessReviewsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1">
-                  {[...Array(rev.rating)].map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  ))}
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-black text-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span>{rev.rating}.0</span>
                 </div>
               </div>
 

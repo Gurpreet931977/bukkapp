@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Sparkles, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Zap, Clock, AlertCircle } from 'lucide-react';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: 'lime' | 'dark' | 'neutral' | 'verified' | 'urgent' | 'outline';
@@ -36,7 +36,7 @@ export function Badge({
     <span className={cn(baseStyles, sizes[size], variants[variant], className)} {...props}>
       {icon === 'verified' && <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />}
       {icon === 'clock' && <Clock className="w-3 h-3 text-brand-secondary shrink-0" />}
-      {icon === 'sparkle' && <Sparkles className="w-3 h-3 text-brand-black shrink-0" />}
+      {icon === 'sparkle' && <Zap className="w-3 h-3 text-brand-black shrink-0" />}
       {icon === 'urgent' && <AlertCircle className="w-3 h-3 text-amber-600 shrink-0" />}
       {children}
     </span>

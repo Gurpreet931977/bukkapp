@@ -7,7 +7,7 @@ import { Business, Category } from '@/types';
 import { store } from '@/lib/db/store';
 import { INITIAL_CATEGORIES, DEHRADUN_NEIGHBORHOODS } from '@/lib/seed/data';
 import { BusinessCard } from '@/components/business/BusinessCard';
-import { ArrowLeft, CheckCircle2, HelpCircle, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, HelpCircle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 export default function CategoryPage() {
@@ -76,7 +76,7 @@ export default function CategoryPage() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="max-w-2xl space-y-2">
               <div className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-[#E8F8CE] px-2.5 py-0.5 rounded-full">
-                <Sparkles className="w-3 h-3" />
+                <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Verified Category</span>
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-brand-black tracking-tight">

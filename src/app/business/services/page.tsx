@@ -14,7 +14,7 @@ import {
   Edit2,
   Trash2,
   CheckCircle2,
-  Sparkles,
+  Zap,
 } from 'lucide-react';
 
 export default function BusinessServicesPage() {
@@ -234,7 +234,7 @@ export default function BusinessServicesPage() {
           {!editingService && categoryTemplates.length > 0 && (
             <div className="p-3 rounded-xl bg-brand-surface-alt border border-brand-border space-y-1.5">
               <span className="text-[10px] font-black uppercase tracking-wider text-brand-muted flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-neutral-500" />
+                <Zap className="w-3 h-3 text-neutral-500" />
                 <span>Suggested for your category:</span>
               </span>
               <div className="flex flex-wrap gap-1.5">

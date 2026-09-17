@@ -8,7 +8,7 @@ import { store } from '@/lib/db/store';
 import { SearchIntentParser } from '@/lib/search/intentParser';
 import { BusinessCard } from '@/components/business/BusinessCard';
 import { FilterBar } from '@/components/search/FilterBar';
-import { Search, Map, LayoutGrid, Sparkles, X, AlertCircle } from 'lucide-react';
+import { Search, Map, LayoutGrid, Compass, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 const LeafletMap = dynamic(
@@ -141,7 +141,7 @@ function SearchPageContent() {
           {parsedIntent && (
             <div className="mt-3 py-2 px-3.5 rounded-xl bg-[#FAFDF4] border border-[#D5F58D] flex items-center justify-between text-xs text-brand-black animate-fade-in">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-[#558B07] shrink-0" />
+                <Compass className="w-3.5 h-3.5 text-[#558B07] shrink-0" />
                 <span>
                   <strong>Search Intent Detected:</strong>{' '}
                   {parsedIntent.detectedCategory && <span className="underline decoration-brand-lime mr-2">Category: {parsedIntent.detectedCategory}</span>}

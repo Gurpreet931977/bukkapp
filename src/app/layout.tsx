@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: 'BUKKAPP — Everything you need. Booked.',
+    title: 'BUKKAPP — Everything you need Booked.',
     description: 'Universal local booking marketplace with real-time availability in Dehradun.',
     type: 'website',
     url: 'https://bukkapp.in',
@@ -67,6 +67,8 @@ export const metadata: Metadata = {
 
 import { ToastProvider } from '@/components/ui/Toast';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { SmoothScrollProvider } from '@/components/providers/SmoothScrollProvider';
+import 'lenis/dist/lenis.css';
 
 export default function RootLayout({
   children,
@@ -74,14 +76,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${plusJakartaSans.variable} font-sans scroll-smooth`}>
+    <html lang="en" className={`${spaceGrotesk.variable} ${plusJakartaSans.variable} font-sans`}>
       <body className="min-h-screen flex flex-col bg-[#FAFAF8] text-[#111111] font-sans antialiased">
-        <ToastProvider>
-          <Navbar />
-          <div className="flex-1 pb-16 md:pb-0">{children}</div>
-          <Footer />
-          <MobileBottomNav />
-        </ToastProvider>
+        <SmoothScrollProvider>
+          <ToastProvider>
+            <Navbar />
+            <div className="flex-1 pb-16 md:pb-0">{children}</div>
+            <Footer />
+            <MobileBottomNav />
+          </ToastProvider>
+        </SmoothScrollProvider>
       </body>
     </html>
   );

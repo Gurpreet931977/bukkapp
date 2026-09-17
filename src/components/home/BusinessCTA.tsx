@@ -12,7 +12,7 @@ export function BusinessCTA() {
   ];
 
   return (
-    <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-[#FAFAF8]">
+    <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-[#FAFAF8] gsap-reveal">
       <div className="relative rounded-3xl bg-brand-black text-white p-8 sm:p-12 md:p-16 overflow-hidden border border-neutral-800 shadow-modal">
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
           <div className="space-y-6">

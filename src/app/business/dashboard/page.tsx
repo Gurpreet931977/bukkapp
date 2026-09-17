@@ -20,7 +20,7 @@ import {
   Share2,
   ExternalLink,
   Store,
-  Sparkles,
+  Zap,
   Phone,
   AlertCircle,
 } from 'lucide-react';
@@ -241,7 +241,7 @@ export default function BusinessDashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xs font-black uppercase tracking-wider text-brand-black flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-neutral-600" />
+                    <Zap className="w-3.5 h-3.5 text-neutral-600" />
                     <span>Storefront Profile Completion: {completedScore}%</span>
                   </h3>
                   <p className="text-[11px] text-brand-secondary mt-0.5">

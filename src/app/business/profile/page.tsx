@@ -16,7 +16,6 @@ import {
   MapPin,
   Phone,
   Globe,
-  Sparkles,
 } from 'lucide-react';
 
 export default function BusinessProfileEditorPage() {

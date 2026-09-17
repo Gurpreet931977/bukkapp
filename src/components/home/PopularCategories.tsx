@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { INITIAL_CATEGORIES } from '@/lib/seed/data';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const categoryImages: Record<string, string> = {
   'health-wellness': 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=600&q=80',
@@ -13,7 +13,7 @@ const categoryImages: Record<string, string> = {
 
 export function PopularCategories() {
   return (
-    <section id="categories" className="py-16 border-t border-brand-border/70 bg-[#FAFAF8]">
+    <section id="categories" className="py-16 border-t border-brand-border/70 bg-[#FAFAF8] gsap-reveal">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>

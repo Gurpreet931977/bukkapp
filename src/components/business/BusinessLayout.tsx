@@ -10,7 +10,7 @@ import {
   Layers,
   Clock,
   Users,
-  Star,
+  MessageSquare,
   ExternalLink,
   Settings,
   HelpCircle,
@@ -83,7 +83,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
     { label: 'Services', href: '/business/services', icon: Layers },
     { label: 'Availability', href: '/business/availability', icon: Clock },
     { label: 'Customers', href: '/business/customers', icon: Users },
-    { label: 'Reviews', href: '/business/reviews', icon: Star },
+    { label: 'Reviews', href: '/business/reviews', icon: MessageSquare },
     { label: 'My BUKKAPP Page', href: '/business/profile', icon: Store },
     { label: 'Business Settings', href: '/business/settings', icon: Settings },
   ];
@@ -317,7 +317,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
                 onClick={() => setIsMobileMoreOpen(false)}
                 className="p-3.5 rounded-xl bg-brand-surface-alt hover:bg-neutral-200 border border-brand-border flex items-center gap-2.5 text-xs font-bold text-brand-black"
               >
-                <Star className="w-4 h-4 text-brand-black" />
+                <MessageSquare className="w-4 h-4 text-brand-black" />
                 <span>Reviews</span>
               </Link>
               <Link

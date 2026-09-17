@@ -14,7 +14,7 @@ import {
   CheckCircle2,
   XCircle,
   RotateCw,
-  Star,
+  MessageSquare,
   Navigation,
   Bookmark,
   User,
@@ -270,9 +270,9 @@ export default function AccountPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleOpenReviewModal(b)}
-                          className="text-xs font-bold gap-1"
+                          className="text-xs font-bold gap-1.5"
                         >
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          <MessageSquare className="w-3.5 h-3.5 text-neutral-600" />
                           <span>Leave Review</span>
                         </Button>
                       )}
@@ -364,22 +364,37 @@ export default function AccountPage() {
         ) : (
           <form onSubmit={handleSubmitReview} className="space-y-4">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-brand-black block mb-2">
-                Rating
-              </label>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-brand-black">
+                  Rating Score
+                </label>
+                <span className="text-xs font-black text-brand-black">
+                  {reviewRating === 5
+                    ? '5.0 — Exceptional'
+                    : reviewRating === 4
+                    ? '4.0 — Very Good'
+                    : reviewRating === 3
+                    ? '3.0 — Average'
+                    : reviewRating === 2
+                    ? '2.0 — Mediocre'
+                    : '1.0 — Poor'}
+                </span>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map((score) => (
                   <button
-                    key={star}
+                    key={score}
                     type="button"
-                    onClick={() => setReviewRating(star)}
-                    className="p-1 hover:scale-110 transition-transform"
+                    onClick={() => setReviewRating(score)}
+                    className={`py-2.5 rounded-xl text-xs font-black transition-all flex flex-col items-center justify-center border cursor-pointer ${
+                      score === reviewRating
+                        ? 'bg-brand-black text-white border-brand-black shadow-2xs scale-102'
+                        : score < reviewRating
+                        ? 'bg-brand-lime/20 text-brand-black border-brand-lime/40'
+                        : 'bg-brand-surface-alt text-neutral-500 border-brand-border hover:border-neutral-400'
+                    }`}
                   >
-                    <Star
-                      className={`w-7 h-7 ${
-                        star <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-neutral-300'
-                      }`}
-                    />
+                    <span>{score}.0</span>
                   </button>
                 ))}
               </div>

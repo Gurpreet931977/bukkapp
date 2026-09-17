@@ -6,7 +6,6 @@ import {
   Search,
   MapPin,
   ArrowRight,
-  Sparkles,
   Layers,
   Calendar,
   Clock,
@@ -16,11 +15,13 @@ import {
   QrCode,
   ShieldCheck,
   Scissors,
-  Trophy,
-  Snowflake,
-  Car,
-  Smile,
-  Star,
+  Activity,
+  Wind,
+  CarFront,
+  Stethoscope,
+  Leaf,
+  TrendingUp,
+  Compass,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -38,12 +39,12 @@ interface KineticService {
 }
 
 const KINETIC_SERVICES: KineticService[] = [
-  { name: 'Pickleball Courts', Icon: Trophy },
+  { name: 'Pickleball Courts', Icon: Activity },
   { name: 'Precision Fades', Icon: Scissors },
-  { name: 'Dentist Clinics', Icon: Smile },
-  { name: 'Same-Day AC Repair', Icon: Snowflake },
-  { name: 'Ayurvedic Spas', Icon: Sparkles },
-  { name: 'Car Detailing', Icon: Car },
+  { name: 'Dentist Clinics', Icon: Stethoscope },
+  { name: 'Same-Day AC Repair', Icon: Wind },
+  { name: 'Ayurvedic Spas', Icon: Leaf },
+  { name: 'Car Detailing', Icon: CarFront },
 ];
 
 const ROTATING_SUGGESTIONS = [
@@ -62,12 +63,12 @@ interface QuickPick {
 }
 
 const POPULAR_QUICK_PICKS: QuickPick[] = [
-  { label: 'Dentist Consultation', query: 'dentist tomorrow', Icon: Smile },
-  { label: 'Pickleball Court', query: 'pickleball for 4 saturday', Icon: Trophy },
+  { label: 'Dentist Consultation', query: 'dentist tomorrow', Icon: Stethoscope },
+  { label: 'Pickleball Court', query: 'pickleball for 4 saturday', Icon: Activity },
   { label: 'Salon & Haircut', query: 'haircut jakhan', Icon: Scissors },
-  { label: 'AC Service & Repair', query: 'ac repair under 800', Icon: Snowflake },
-  { label: 'Ayurvedic Spa', query: 'spa rajpur road', Icon: Sparkles },
-  { label: 'Car Detailing', query: 'car detailing dehradun', Icon: Car },
+  { label: 'AC Service & Repair', query: 'ac repair under 800', Icon: Wind },
+  { label: 'Ayurvedic Spa', query: 'spa rajpur road', Icon: Leaf },
+  { label: 'Car Detailing', query: 'car detailing dehradun', Icon: CarFront },
 ];
 
 interface CategoryDockItem {
@@ -78,12 +79,12 @@ interface CategoryDockItem {
 }
 
 const CATEGORY_DOCK: CategoryDockItem[] = [
-  { label: 'Pickleball', Icon: Trophy, status: '4 venues', query: 'pickleball' },
+  { label: 'Pickleball', Icon: Activity, status: '4 venues', query: 'pickleball' },
   { label: 'Salons', Icon: Scissors, status: '12 open', query: 'haircut' },
-  { label: 'Dentists', Icon: Smile, status: 'Verified', query: 'dentist' },
-  { label: 'AC Service', Icon: Snowflake, status: 'Same-day', query: 'ac repair' },
-  { label: 'Detailing', Icon: Car, status: 'Top rated', query: 'detailing' },
-  { label: 'Wellness', Icon: Sparkles, status: '5 spas', query: 'spa' },
+  { label: 'Dentists', Icon: Stethoscope, status: 'Verified', query: 'dentist' },
+  { label: 'AC Service', Icon: Wind, status: 'Same-day', query: 'ac repair' },
+  { label: 'Detailing', Icon: CarFront, status: 'Top rated', query: 'detailing' },
+  { label: 'Wellness', Icon: Leaf, status: '5 spas', query: 'spa' },
 ];
 
 export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: HeroSectionProps) {
@@ -196,7 +197,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
                 <span className="absolute bottom-0 right-0 bg-brand-black/90 backdrop-blur-xs p-1 rounded-tl text-brand-lime flex items-center justify-center">
-                  <Trophy className="w-2.5 h-2.5" />
+                  <Activity className="w-2.5 h-2.5" />
                 </span>
               </div>
               <div className="min-w-0 flex-1">
@@ -239,7 +240,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
             onClick={() => router.push('/business/the-groom-room')}
             className="group block text-left animate-float-right bg-white/95 backdrop-blur-2xl border border-neutral-200/90 hover:border-brand-black shadow-[0_12px_36px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.12),0_0_24px_rgba(199,243,107,0.3)] rounded-2xl p-4 w-72 transition-all duration-300 hover:-translate-y-1 select-none cursor-pointer"
           >
-            {/* Header: Next Open Slot + Rating */}
+            {/* Header: Next Open Slot + Rating (No star icon) */}
             <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-neutral-100">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-brand-lime live-pulse-dot" />
@@ -247,8 +248,8 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                   Next Open Slot
                 </span>
               </div>
-              <span className="text-[10px] font-bold text-amber-800 flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80">
-                <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400 shrink-0" />
+              <span className="text-[10px] font-bold text-amber-900 flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/80">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                 <span>4.9</span>
                 <span className="text-neutral-400 font-normal">(148)</span>
               </span>
@@ -462,7 +463,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
               <div className="absolute left-0 right-0 top-full mt-2.5 bg-white/98 backdrop-blur-md rounded-2xl border border-brand-border shadow-modal p-4 text-left z-30 animate-slide-down">
                 <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-100">
                   <span className="text-[11px] font-black uppercase tracking-wider text-brand-muted flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-brand-lime" />
+                    <TrendingUp className="w-3.5 h-3.5 text-brand-lime" />
                     Popular Right Now in Dehradun
                   </span>
                   <span className="text-[10px] text-neutral-400">Click to fill</span>
@@ -478,10 +479,10 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                           e.preventDefault();
                           handleFillSuggestion(item.query);
                         }}
-                        className="flex items-center gap-2 p-2 rounded-xl bg-brand-surface-alt hover:bg-brand-lime/25 border border-transparent hover:border-brand-lime/50 text-xs font-semibold text-brand-black transition-all text-left group/item cursor-pointer"
+                        className="flex items-center gap-2.5 p-2 rounded-xl bg-brand-surface-alt hover:bg-brand-lime/25 border border-transparent hover:border-brand-lime/50 text-xs font-semibold text-brand-black transition-all text-left group/item cursor-pointer"
                       >
-                        <span className="w-6 h-6 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 group-hover/item:scale-110 group-hover/item:bg-brand-lime/40 transition-all">
-                          <ItemIcon className="w-3.5 h-3.5 text-brand-black" />
+                        <span className="w-6 h-6 rounded-lg bg-white border border-neutral-200/80 flex items-center justify-center shrink-0 group-hover/item:scale-105 group-hover/item:border-brand-black transition-all shadow-2xs">
+                          <ItemIcon className="w-3.5 h-3.5 text-neutral-800 group-hover/item:text-brand-black" />
                         </span>
                         <span className="truncate">{item.label}</span>
                       </button>
@@ -502,7 +503,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
             {liveIntent && (
               <div className="mt-2.5 p-2.5 rounded-xl bg-white border border-brand-border shadow-subtle flex flex-wrap items-center justify-center gap-1.5 text-xs animate-slide-up">
                 <span className="text-[10px] font-bold text-brand-muted uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-neutral-600" />
+                  <Compass className="w-3.5 h-3.5 text-neutral-600" />
                   <span>Detected:</span>
                 </span>
 
