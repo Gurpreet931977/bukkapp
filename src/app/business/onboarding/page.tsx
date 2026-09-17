@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { store } from '@/lib/db/store';
 import { Button } from '@/components/ui/Button';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { INITIAL_CATEGORIES, DEHRADUN_NEIGHBORHOODS } from '@/lib/seed/data';
 import {
   Store,
@@ -251,54 +252,49 @@ export default function BusinessOnboardingPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-black uppercase tracking-wider">Category</label>
-                    <select
+                  <div>
+                    <CustomSelect
+                      label="Category"
                       value={categoryId}
-                      onChange={(e) => setCategoryId(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black bg-white text-brand-black font-semibold"
-                    >
-                      {INITIAL_CATEGORIES.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                      onChange={setCategoryId}
+                      options={INITIAL_CATEGORIES.map((c) => ({ label: c.name, value: c.id }))}
+                      size="lg"
+                    />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-black uppercase tracking-wider">Subcategory</label>
+                    <label className="text-xs font-bold text-brand-black uppercase tracking-wider block mb-1">Subcategory</label>
                     <input
                       type="text"
                       value={subcategory}
                       onChange={(e) => setSubcategory(e.target.value)}
                       placeholder="e.g. Pickleball Arena, Dental Clinic"
-                      className="w-full px-4 py-3 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black text-brand-black"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black text-brand-black min-h-[44px]"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-black uppercase tracking-wider">Street Address</label>
+                    <label className="text-xs font-bold text-brand-black uppercase tracking-wider block mb-1">Street Address</label>
                     <input
                       type="text"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       placeholder="Plot 14, Old Rajpur Road"
-                      className="w-full px-4 py-3 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black text-brand-black"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black text-brand-black min-h-[44px]"
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-black uppercase tracking-wider">Neighborhood</label>
-                    <select
+                  <div>
+                    <CustomSelect
+                      label="Neighborhood"
                       value={neighborhood}
-                      onChange={(e) => setNeighborhood(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black bg-white text-brand-black font-semibold"
-                    >
-                      {DEHRADUN_NEIGHBORHOODS.slice(1).map((hood) => (
-                        <option key={hood} value={hood}>{hood}</option>
-                      ))}
-                    </select>
+                      onChange={setNeighborhood}
+                      options={DEHRADUN_NEIGHBORHOODS.slice(1)}
+                      searchable
+                      size="lg"
+                    />
                   </div>
                 </div>
 
@@ -368,18 +364,19 @@ export default function BusinessOnboardingPage() {
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-black uppercase tracking-wider">Duration</label>
-                    <select
+                  <div>
+                    <CustomSelect
+                      label="Duration"
                       value={serviceDuration}
-                      onChange={(e) => setServiceDuration(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black bg-white text-brand-black font-semibold"
-                    >
-                      <option value="30">30 minutes</option>
-                      <option value="45">45 minutes</option>
-                      <option value="60">60 minutes (1 hour)</option>
-                      <option value="90">90 minutes</option>
-                    </select>
+                      onChange={setServiceDuration}
+                      options={[
+                        { label: '30 minutes', value: '30' },
+                        { label: '45 minutes', value: '45' },
+                        { label: '60 minutes (1 hour)', value: '60' },
+                        { label: '90 minutes', value: '90' },
+                      ]}
+                      size="lg"
+                    />
                   </div>
                 </div>
               </div>
@@ -472,7 +469,7 @@ export default function BusinessOnboardingPage() {
                     <h3 className="text-lg font-black text-brand-black">{name || 'Your Business Name'}</h3>
                     <p className="text-xs text-brand-secondary">{subcategory || 'Service'} • {neighborhood}, Dehradun</p>
                     <p className="text-xs font-bold text-brand-black mt-1">
-                      {serviceName} — {formatPrice(parseInt(servicePrice, 10) || 500)} ({serviceDuration}m)
+                      {serviceName} · {formatPrice(parseInt(servicePrice, 10) || 500)} ({serviceDuration}m)
                     </p>
                   </div>
                 </div>

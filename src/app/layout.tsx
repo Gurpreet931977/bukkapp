@@ -27,7 +27,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://bukkapp.in'),
-  title: 'BUKKAPP — Universal Local Booking Marketplace',
+  title: 'BUKKAPP - Universal Local Booking Marketplace',
   description:
     'Discover trusted local businesses, see real-time availability, and book appointments in minutes. Dentists, salons, pickleball, AC repair, detailing and more in Dehradun.',
   keywords: [
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: 'BUKKAPP — Everything you need Booked.',
+    title: 'BUKKAPP - Everything you need Booked.',
     description: 'Universal local booking marketplace with real-time availability in Dehradun.',
     type: 'website',
     url: 'https://bukkapp.in',

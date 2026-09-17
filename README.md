@@ -1,4 +1,4 @@
-# BUKKAPP — Universal Local Booking Marketplace
+# BUKKAPP - Universal Local Booking Marketplace
 
 > **"Everything you need. Booked."**
 
@@ -59,23 +59,23 @@ npm run start
 
 ## Key Routes
 
-- `/` — Consumer Homepage with NLP Search, Popular Categories, and Live Slots
-- `/search` — Universal Search & Filter Engine with Grid / Split Map View
-- `/category/[slug]` — Category Landing Pages (e.g. `/category/health-wellness`, `/category/beauty-grooming`)
-- `/business/[slug]` — Business Storefront & Interactive Booking Trigger
-- `/book/[businessSlug]/[serviceId]` — Multi-step Booking Checkout
-- `/booking/[bookingId]` — Digital Boarding Ticket, Calendar Sync & Directions
-- `/account` — Customer Hub (Upcoming appointments, past history, review modal, favorites)
-- `/business/onboarding` — 4-Step Merchant Storefront Onboarding Wizard
-- `/business/dashboard` — Merchant Control Center
-- `/admin` — Super-Admin Verification & Operations Room
+- `/`: Consumer Homepage with NLP Search, Popular Categories, and Live Slots
+- `/search`: Universal Search & Filter Engine with Grid / Split Map View
+- `/category/[slug]`: Category Landing Pages (e.g. `/category/health-wellness`, `/category/beauty-grooming`)
+- `/business/[slug]`: Business Storefront & Interactive Booking Trigger
+- `/book/[businessSlug]/[serviceId]`: Multi-step Booking Checkout
+- `/booking/[bookingId]`: Digital Boarding Ticket, Calendar Sync & Directions
+- `/account`: Customer Hub (Upcoming appointments, past history, review modal, favorites)
+- `/business/onboarding`: 4-Step Merchant Storefront Onboarding Wizard
+- `/business/dashboard`: Merchant Control Center
+- `/admin`: Super-Admin Verification & Operations Room
 
 ---
 
 ## Project Documentation
 
-- [`MANUAL_SETUP.md`](./MANUAL_SETUP.md) — Step-by-step founder checklist for testing, Supabase setup, and deployment.
-- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — Technical deep dive into data flow, search parser, and booking concurrency.
-- [`ENVIRONMENT.md`](./ENVIRONMENT.md) — Environment variables, secrets handling, and defaults.
-- [`PRODUCT_NOTES.md`](./PRODUCT_NOTES.md) — Business model, product thesis, and future monetization placeholders.
-- [`TESTING.md`](./TESTING.md) — Comprehensive QA checklist and verification runbook.
+- [`MANUAL_SETUP.md`](./MANUAL_SETUP.md): Step-by-step founder checklist for testing, Supabase setup, and deployment.
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md): Technical deep dive into data flow, search parser, and booking concurrency.
+- [`ENVIRONMENT.md`](./ENVIRONMENT.md): Environment variables, secrets handling, and defaults.
+- [`PRODUCT_NOTES.md`](./PRODUCT_NOTES.md): Business model, product thesis, and future monetization placeholders.
+- [`TESTING.md`](./TESTING.md): Comprehensive QA checklist and verification runbook.

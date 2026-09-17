@@ -393,7 +393,7 @@ export default function BusinessProfilePage() {
                   <div key={day.dayName} className="flex items-center justify-between py-1 border-b border-brand-border/40 last:border-0">
                     <span className="font-bold text-brand-black w-10">{day.dayName}</span>
                     <span className={day.isOpen ? 'text-brand-black font-semibold' : 'text-neutral-400 font-medium'}>
-                      {day.isOpen ? `${day.openTime} – ${day.closeTime}` : 'Closed'}
+                      {day.isOpen ? `${day.openTime} to ${day.closeTime}` : 'Closed'}
                     </span>
                   </div>
                 ))}

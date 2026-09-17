@@ -93,16 +93,16 @@
 
 ### `bookings`
 - `id` (UUID / TEXT, PK)
-- `booking_reference` (TEXT, UNIQUE, NOT NULL) — Format: `BK-XXXXXX`
+- `booking_reference` (TEXT, UNIQUE, NOT NULL) - Format: `BK-XXXXXX`
 - `user_id` (UUID / TEXT, FK -> `users.id`, NOT NULL)
 - `business_id` (UUID / TEXT, FK -> `businesses.id`, NOT NULL)
 - `service_id` (UUID / TEXT, FK -> `services.id`, NOT NULL)
 - `resource_id` (UUID / TEXT, FK -> `resources.id`, NULLABLE)
 - `customer_name`, `customer_phone`, `customer_email` (TEXT)
 - `date` (DATE, NOT NULL)
-- `start_time` (TEXT, NOT NULL) — "HH:MM"
-- `end_time` (TEXT, NOT NULL) — "HH:MM"
-- `service_price` (INTEGER, NOT NULL) — Fixed price record
+- `start_time` (TEXT, NOT NULL) - "HH:MM"
+- `end_time` (TEXT, NOT NULL) - "HH:MM"
+- `service_price` (INTEGER, NOT NULL) - Fixed price record
 - `duration_minutes` (INTEGER, NOT NULL)
 - `status` (TEXT: `'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'`, DEFAULT `'confirmed'`)
 - `payment_status` (TEXT: `'paid_simulated' | 'pending' | 'refunded'`)

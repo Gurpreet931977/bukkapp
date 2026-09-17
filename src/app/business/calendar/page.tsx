@@ -189,7 +189,7 @@ export default function BusinessCalendarPage() {
                         >
                           <div>
                             <p className="font-bold text-white">
-                              {bk.customerName} — {bk.serviceName}
+                              {bk.customerName} · {bk.serviceName}
                             </p>
                             <p className="text-[11px] text-neutral-300">
                               {formatTime24to12(bk.startTime)} to {formatTime24to12(bk.endTime)} ({bk.durationMinutes}m)

@@ -370,14 +370,14 @@ export default function AccountPage() {
                 </label>
                 <span className="text-xs font-black text-brand-black">
                   {reviewRating === 5
-                    ? '5.0 — Exceptional'
+                    ? '5.0 · Exceptional'
                     : reviewRating === 4
-                    ? '4.0 — Very Good'
+                    ? '4.0 · Very Good'
                     : reviewRating === 3
-                    ? '3.0 — Average'
+                    ? '3.0 · Average'
                     : reviewRating === 2
-                    ? '2.0 — Mediocre'
-                    : '1.0 — Poor'}
+                    ? '2.0 · Mediocre'
+                    : '1.0 · Poor'}
                 </span>
               </div>
               <div className="grid grid-cols-5 gap-2">

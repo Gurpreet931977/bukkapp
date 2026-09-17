@@ -46,7 +46,7 @@ This audit evaluates the codebase against the three core product interfaces:
 
 ## 3. Partially Implemented (To Be Completed in this Execution)
 1. **Business Claim System**: Need an explicit claim workflow for listed businesses (*"Is this your business? Claim it"*).
-2. **Business Profile Completion**: Dashboard should feature an actionable completion bar (e.g. *"85% Complete — Missing: 2 photos, Opening hours"*).
+2. **Business Profile Completion**: Dashboard should feature an actionable completion bar (e.g. *"85% Complete - Missing: 2 photos, Opening hours"*).
 3. **Onboarding Auto-Save & Resumption**: Auto-save form drafts to localStorage so owners never lose entered data if they exit midway.
 4. **Digital Business Card & QR Code Generator**: Dedicated share view with downloadable digital business card asset and QR code rendering.
 5. **Search Intent Parser**: Natural language query expansion for complex queries (*"Dentist tomorrow after 6"*, *"Pickleball 4 people Saturday evening"*).

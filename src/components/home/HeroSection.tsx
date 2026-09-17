@@ -166,11 +166,11 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
 
       {/* Outer 7XL Framing Container for Harmonious Floating Cards & Central Hero */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        {/* Interactive Floating Live Activity Card: Left (Verified Booking Pass) */}
-        <div className="hidden min-[1420px]:block absolute top-12 left-0 2xl:left-4 z-20 pointer-events-auto">
+        {/* Interactive Floating Live Activity Card: Left (Staggered beside kinetic ticker & search) */}
+        <div className="hidden xl:block absolute top-[215px] 2xl:top-[230px] left-0 2xl:left-4 z-20 pointer-events-auto">
           <div
             onClick={() => setIsPassModalOpen(true)}
-            className="group block text-left animate-float-left bg-white/95 backdrop-blur-2xl border border-neutral-200/90 hover:border-brand-black shadow-[0_12px_36px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.12),0_0_24px_rgba(199,243,107,0.3)] rounded-2xl p-4 w-72 transition-all duration-300 hover:-translate-y-1 select-none cursor-pointer"
+            className="group block text-left animate-float-left bg-white/95 backdrop-blur-2xl border border-neutral-200/90 hover:border-brand-black shadow-[0_12px_36px_rgba(0,0,0,0.06)] hover:shadow-[0_24px_48px_rgba(0,0,0,0.12),0_0_24px_rgba(199,243,107,0.3)] rounded-2xl p-4 w-68 2xl:w-72 transition-all duration-300 hover:-translate-y-1.5 select-none cursor-pointer"
           >
             {/* Header: Live Confirmed Radar Pill + Monospace Ref */}
             <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-neutral-100">
@@ -234,11 +234,11 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
           </div>
         </div>
 
-        {/* Interactive Floating Live Activity Card: Right (Instant Open Slot) */}
-        <div className="hidden min-[1420px]:block absolute top-16 right-0 2xl:right-4 z-20 pointer-events-auto">
+        {/* Interactive Floating Live Activity Card: Right (Staggered beside search bar & categories) */}
+        <div className="hidden xl:block absolute top-[285px] 2xl:top-[305px] right-0 2xl:right-4 z-20 pointer-events-auto">
           <div
             onClick={() => router.push('/business/the-groom-room')}
-            className="group block text-left animate-float-right bg-white/95 backdrop-blur-2xl border border-neutral-200/90 hover:border-brand-black shadow-[0_12px_36px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.12),0_0_24px_rgba(199,243,107,0.3)] rounded-2xl p-4 w-72 transition-all duration-300 hover:-translate-y-1 select-none cursor-pointer"
+            className="group block text-left animate-float-right bg-white/95 backdrop-blur-2xl border border-neutral-200/90 hover:border-brand-black shadow-[0_12px_36px_rgba(0,0,0,0.06)] hover:shadow-[0_24px_48px_rgba(0,0,0,0.12),0_0_24px_rgba(199,243,107,0.3)] rounded-2xl p-4 w-68 2xl:w-72 transition-all duration-300 hover:-translate-y-1.5 select-none cursor-pointer"
           >
             {/* Header: Next Open Slot + Rating (No star icon) */}
             <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-neutral-100">
@@ -644,7 +644,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                     Scheduled Slot
                   </span>
                   <span className="font-black text-emerald-600 mt-0.5 block">
-                    Today · 6:00 PM – 7:00 PM
+                    Today · 6:00 PM to 7:00 PM
                   </span>
                 </div>
                 <div>

@@ -4,7 +4,7 @@ This guide lists everything you (the founder) must manually configure. All tasks
 
 ---
 
-## 1. What You Must Manually Do NOW (Local Testing — 100% Free)
+## 1. What You Must Manually Do NOW (Local Testing - 100% Free)
 
 ### Task 1.1: Run the Automated Test Suite
 - **Exact Action**: In your terminal inside the project folder, run `npm test`.

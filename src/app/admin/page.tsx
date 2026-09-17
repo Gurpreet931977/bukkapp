@@ -307,7 +307,7 @@ export default function AdminConsolePage() {
                     <div>
                       <p className="font-bold text-brand-black">
                         <span className="capitalize">{log.action.replace(/_/g, ' ')}</span>
-                        {log.metadata?.name && ` — ${log.metadata.name}`}
+                        {log.metadata?.name && ` · ${log.metadata.name}`}
                       </p>
                       <p className="text-[11px] text-brand-secondary">
                         Operator: {log.actorName} • Entity: {log.entityType} ({log.entityId})

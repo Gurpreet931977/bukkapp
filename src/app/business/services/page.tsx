@@ -6,6 +6,7 @@ import { Business, Service } from '@/types';
 import { BusinessLayout } from '@/components/business/BusinessLayout';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { formatPrice } from '@/lib/utils';
 import {
   Layers,
@@ -277,20 +278,20 @@ export default function BusinessServicesPage() {
                 className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black"
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-brand-black uppercase tracking-wider">Duration (Minutes)</label>
-              <select
+            <div>
+              <CustomSelect
+                label="Duration"
                 value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border text-xs focus:outline-hidden focus:border-brand-black bg-white"
-              >
-                <option value="15">15 mins</option>
-                <option value="30">30 mins</option>
-                <option value="45">45 mins</option>
-                <option value="60">60 mins (1 hour)</option>
-                <option value="90">90 mins (1.5 hours)</option>
-                <option value="120">120 mins (2 hours)</option>
-              </select>
+                onChange={setDuration}
+                options={[
+                  { label: '15 mins', value: '15' },
+                  { label: '30 mins', value: '30' },
+                  { label: '45 mins', value: '45' },
+                  { label: '60 mins (1 hour)', value: '60' },
+                  { label: '90 mins (1.5 hours)', value: '90' },
+                  { label: '120 mins (2 hours)', value: '120' },
+                ]}
+              />
             </div>
           </div>
 

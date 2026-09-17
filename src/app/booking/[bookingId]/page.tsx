@@ -154,7 +154,7 @@ export default function BookingConfirmationPage() {
                   </p>
                   <p className="text-sm font-bold text-emerald-700 flex items-center gap-1.5 mt-1">
                     <Clock className="w-4 h-4 text-emerald-700" />
-                    <span>{formatTime24to12(booking.startTime)} – {formatTime24to12(booking.endTime)}</span>
+                    <span>{formatTime24to12(booking.startTime)} to {formatTime24to12(booking.endTime)}</span>
                   </p>
                 </div>
 

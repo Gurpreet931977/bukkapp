@@ -5,6 +5,7 @@ import { SearchFilters } from '@/types';
 import { INITIAL_CATEGORIES, DEHRADUN_NEIGHBORHOODS } from '@/lib/seed/data';
 import { Filter, Check, SlidersHorizontal, RotateCcw, X, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface FilterBarProps {
   filters: SearchFilters;
@@ -100,56 +101,33 @@ export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBar
         <div className="hidden sm:grid pt-3 border-t border-brand-border/60 grid-cols-2 md:grid-cols-4 gap-3">
           {/* Neighborhood Selector */}
           <div>
-            <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider block mb-1">
-              Neighborhood
-            </label>
-            <select
+            <CustomSelect
+              label="Neighborhood"
               value={filters.neighborhood || 'All Areas'}
-              onChange={(e) => handleNeighborhoodChange(e.target.value)}
-              className="w-full text-xs font-semibold text-brand-black bg-brand-surface-alt border border-brand-border rounded-xl px-3 py-2 focus:outline-hidden focus:border-brand-black"
-            >
-              {DEHRADUN_NEIGHBORHOODS.map((hood) => (
-                <option key={hood} value={hood}>
-                  {hood}
-                </option>
-              ))}
-            </select>
+              onChange={handleNeighborhoodChange}
+              options={DEHRADUN_NEIGHBORHOODS}
+              searchable
+            />
           </div>
 
           {/* Time of Day */}
           <div>
-            <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider block mb-1">
-              Time Slot
-            </label>
-            <select
-              value={filters.timePeriod || 'all'}
-              onChange={(e) => onChange({ ...filters, timePeriod: e.target.value as any })}
-              className="w-full text-xs font-semibold text-brand-black bg-brand-surface-alt border border-brand-border rounded-xl px-3 py-2 focus:outline-hidden focus:border-brand-black"
-            >
-              {timePeriods.map((tp) => (
-                <option key={tp.label} value={tp.value}>
-                  {tp.label}
-                </option>
-              ))}
-            </select>
+            <CustomSelect
+              label="Time Slot"
+              value={filters.timePeriod || ''}
+              onChange={(val) => onChange({ ...filters, timePeriod: (val || undefined) as any })}
+              options={timePeriods.map((tp) => ({ label: tp.label, value: tp.value || '' }))}
+            />
           </div>
 
           {/* Sort By */}
           <div>
-            <label className="text-[11px] font-bold text-brand-muted uppercase tracking-wider block mb-1">
-              Sort Order
-            </label>
-            <select
+            <CustomSelect
+              label="Sort Order"
               value={filters.sortBy || 'recommended'}
-              onChange={(e) => handleSortChange(e.target.value as any)}
-              className="w-full text-xs font-semibold text-brand-black bg-brand-surface-alt border border-brand-border rounded-xl px-3 py-2 focus:outline-hidden focus:border-brand-black"
-            >
-              {sortOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => handleSortChange(val as any)}
+              options={sortOptions.map((opt) => ({ label: opt.label, value: opt.value }))}
+            />
           </div>
 
           {/* Verified Only Toggle */}
@@ -245,21 +223,15 @@ export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBar
               </div>
 
               {/* Neighborhood */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-brand-muted block">
-                  Neighborhood (Dehradun)
-                </label>
-                <select
+              <div className="space-y-1.5">
+                <CustomSelect
+                  label="Neighborhood (Dehradun)"
                   value={filters.neighborhood || 'All Areas'}
-                  onChange={(e) => handleNeighborhoodChange(e.target.value)}
-                  className="w-full text-sm font-semibold text-brand-black bg-brand-surface-alt border border-brand-border rounded-xl p-3 focus:outline-hidden"
-                >
-                  {DEHRADUN_NEIGHBORHOODS.map((hood) => (
-                    <option key={hood} value={hood}>
-                      {hood}
-                    </option>
-                  ))}
-                </select>
+                  onChange={handleNeighborhoodChange}
+                  options={DEHRADUN_NEIGHBORHOODS}
+                  searchable
+                  size="lg"
+                />
               </div>
 
               {/* Time of Day */}
