@@ -99,6 +99,17 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [isPassModalOpen, setIsPassModalOpen] = useState(false);
 
+  // Rotate search placeholder suggestions periodically (smooth kinetic flip)
+  useEffect(() => {
+    if (query) return;
+
+    const interval = setInterval(() => {
+      setSuggestionIndex((prev) => (prev + 1) % ROTATING_SUGGESTIONS.length);
+    }, 3400);
+
+    return () => clearInterval(interval);
+  }, [query]);
+
   // Kinetic Service Typewriter State (Famous typing -> pause -> backspace one by one -> loop)
   const [typewriterIndex, setTypewriterIndex] = useState(0);
   const [displayText, setDisplayText] = useState('');
@@ -134,7 +145,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     return () => clearTimeout(timer);
   }, [displayText, isDeleting, typewriterIndex]);
 
-  // Category Dock Interactive Engine: Smooth slow continuous auto-sliding + fluid manual drag/swipe + intelligent resume
+  // Category Dock Interactive Engine: Smooth slow continuous auto-sliding + kinetic momentum dragging + intelligent resume
   const dockScrollRef = useRef<HTMLDivElement>(null);
   const firstSetRef = useRef<HTMLDivElement>(null);
   const isInteractingRef = useRef(false);
@@ -148,15 +159,21 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const isProgrammaticScrollRef = useRef(false);
   const lastTimestampRef = useRef<number | null>(null);
 
+  // Kinetic momentum / inertia velocity tracking & auto-slide ramp
+  const momentumVelocityRef = useRef(0); // in pixels per second
+  const autoSlideSpeedRef = useRef(0); // ramps smoothly to SPEED_PPS
+  const pointerHistoryRef = useRef<{ time: number; x: number }[]>([]);
+
   const pauseAutoSlide = () => {
     isInteractingRef.current = true;
+    autoSlideSpeedRef.current = 0;
     if (resumeTimerRef.current) {
       clearTimeout(resumeTimerRef.current);
       resumeTimerRef.current = null;
     }
   };
 
-  const resumeAutoSlide = (delay = 1800) => {
+  const resumeAutoSlide = (delay = 1400) => {
     if (resumeTimerRef.current) {
       clearTimeout(resumeTimerRef.current);
     }
@@ -166,49 +183,125 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
       }
       isInteractingRef.current = false;
       lastTimestampRef.current = null;
+      autoSlideSpeedRef.current = 0;
     }, delay);
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignore if pointer capture not supported
+    }
+
+    // If tapping while coasting with momentum, absorb momentum immediately like iOS/Android
+    if (Math.abs(momentumVelocityRef.current) > 15) {
+      hasDraggedRef.current = true;
+    } else {
+      hasDraggedRef.current = false;
+    }
+    momentumVelocityRef.current = 0;
+
     isPointerDownRef.current = true;
-    hasDraggedRef.current = false;
     startXRef.current = e.clientX;
     startScrollLeftRef.current = dockScrollRef.current?.scrollLeft || 0;
     scrollAccumulatorRef.current = startScrollLeftRef.current;
+    pointerHistoryRef.current = [{ time: performance.now(), x: e.clientX }];
+
     pauseAutoSlide();
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isPointerDownRef.current || !dockScrollRef.current) return;
+
+    const now = performance.now();
+    pointerHistoryRef.current.push({ time: now, x: e.clientX });
+    // Keep recent 100ms of pointer motion for exact release velocity
+    pointerHistoryRef.current = pointerHistoryRef.current.filter((p) => now - p.time <= 100);
+
     const deltaX = e.clientX - startXRef.current;
     if (Math.abs(deltaX) > 4) {
       hasDraggedRef.current = true;
     }
-    const newScrollLeft = startScrollLeftRef.current - deltaX;
-    dockScrollRef.current.scrollLeft = newScrollLeft;
-    scrollAccumulatorRef.current = newScrollLeft;
+
+    let targetScroll = startScrollLeftRef.current - deltaX;
+    const setWidth = firstSetRef.current?.offsetWidth || 0;
+
+    // Infinite wrapping during active drag: shifts startScrollLeftRef so user can drag indefinitely in either direction
+    if (setWidth > 0) {
+      while (targetScroll >= setWidth * 3) {
+        targetScroll -= setWidth;
+        startScrollLeftRef.current -= setWidth;
+      }
+      while (targetScroll < setWidth * 2) {
+        targetScroll += setWidth;
+        startScrollLeftRef.current += setWidth;
+      }
+    }
+
+    isProgrammaticScrollRef.current = true;
+    dockScrollRef.current.scrollLeft = targetScroll;
+    scrollAccumulatorRef.current = targetScroll;
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // Ignore
+    }
+
     if (isPointerDownRef.current) {
       isPointerDownRef.current = false;
       if (dockScrollRef.current) {
         scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
       }
-      if (!isHoveredRef.current) {
-        resumeAutoSlide(1800);
+
+      // Calculate release velocity from recent pointer trajectory
+      const now = performance.now();
+      const history = pointerHistoryRef.current.filter((p) => now - p.time <= 100);
+      if (history.length >= 2) {
+        const oldest = history[0];
+        const newest = history[history.length - 1];
+        const dt = (newest.time - oldest.time) / 1000;
+        // User must have moved recently (< 70ms before release) to carry momentum
+        if (dt > 0.015 && now - newest.time < 70) {
+          const dx = newest.x - oldest.x;
+          // Swiping left (dx < 0) advances forward (positive scrollLeft velocity)
+          const rawV = -dx / dt;
+          if (Math.abs(rawV) > 35) {
+            // High-capacity kinetic velocity cap with natural 1.25x flick responsiveness
+            const MAX_VELOCITY = 4500;
+            momentumVelocityRef.current = Math.sign(rawV) * Math.min(MAX_VELOCITY, Math.abs(rawV) * 1.25);
+          } else {
+            momentumVelocityRef.current = 0;
+          }
+        } else {
+          momentumVelocityRef.current = 0;
+        }
+      } else {
+        momentumVelocityRef.current = 0;
+      }
+
+      // If no momentum was imparted, schedule auto-slide resume; otherwise inertia loop will schedule it once force is utilised
+      if (Math.abs(momentumVelocityRef.current) < 8 && !isHoveredRef.current) {
+        resumeAutoSlide(1400);
       }
     }
   };
 
   const handleWheel = () => {
     pauseAutoSlide();
+    momentumVelocityRef.current = 0;
     if (dockScrollRef.current) {
       scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
     }
     if (!isHoveredRef.current) {
-      resumeAutoSlide(1800);
+      resumeAutoSlide(1400);
     }
   };
 
@@ -226,17 +319,18 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     const container = dockScrollRef.current;
     const setWidth = firstSetRef.current?.offsetWidth;
     if (container && setWidth && setWidth > 0) {
-      if (container.scrollLeft >= setWidth * 2) {
+      while (container.scrollLeft >= setWidth * 3) {
         container.scrollLeft -= setWidth;
         scrollAccumulatorRef.current = container.scrollLeft;
-      } else if (container.scrollLeft <= setWidth * 0.3) {
+      }
+      while (container.scrollLeft < setWidth * 2) {
         container.scrollLeft += setWidth;
         scrollAccumulatorRef.current = container.scrollLeft;
       }
     }
 
-    if (!isHoveredRef.current && !isPointerDownRef.current) {
-      resumeAutoSlide(1800);
+    if (!isHoveredRef.current && !isPointerDownRef.current && Math.abs(momentumVelocityRef.current) < 8) {
+      resumeAutoSlide(1400);
     }
   };
 
@@ -245,7 +339,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     handlePromptClick(catQuery);
   };
 
-  // Continuous, gentle slow auto-slide RAF loop with time-delta
+  // Continuous, gentle slow auto-slide RAF loop with momentum inertia physics & time-delta
   useEffect(() => {
     let animationFrameId: number;
     let initialized = false;
@@ -260,8 +354,8 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
       if (container && setWidth > 0) {
         if (!initialized) {
           isProgrammaticScrollRef.current = true;
-          container.scrollLeft = setWidth;
-          scrollAccumulatorRef.current = setWidth;
+          container.scrollLeft = setWidth * 2;
+          scrollAccumulatorRef.current = setWidth * 2;
           initialized = true;
         }
 
@@ -271,17 +365,55 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
         const dt = Math.min((timestamp - lastTimestampRef.current) / 1000, 0.1);
         lastTimestampRef.current = timestamp;
 
-        if (!isInteractingRef.current) {
-          scrollAccumulatorRef.current += SPEED_PPS * dt;
+        // 1. INERTIA COASTING (Fling / Kinetic Momentum)
+        if (Math.abs(momentumVelocityRef.current) > 8) {
+          scrollAccumulatorRef.current += momentumVelocityRef.current * dt;
 
-          if (scrollAccumulatorRef.current >= setWidth * 2) {
+          // Silky exponential deceleration friction (natural physics decay: preserves momentum until force is utilised)
+          const friction = Math.pow(0.978, dt * 60);
+          momentumVelocityRef.current *= friction;
+
+          // Seamless infinite wrap check during inertia coasting
+          while (scrollAccumulatorRef.current >= setWidth * 3) {
             scrollAccumulatorRef.current -= setWidth;
-          } else if (scrollAccumulatorRef.current <= setWidth * 0.3) {
+          }
+          while (scrollAccumulatorRef.current < setWidth * 2) {
             scrollAccumulatorRef.current += setWidth;
           }
 
           isProgrammaticScrollRef.current = true;
           container.scrollLeft = scrollAccumulatorRef.current;
+        } else {
+          // Once force has been completely utilized, reset velocity and schedule smooth resume
+          if (momentumVelocityRef.current !== 0) {
+            momentumVelocityRef.current = 0;
+            if (!isHoveredRef.current && !isPointerDownRef.current) {
+              resumeAutoSlide(1200);
+            }
+          }
+
+          // 2. GENTLE AUTO-SLIDING (when idle & un-interrupted)
+          if (!isInteractingRef.current) {
+            // Smoothly ramp auto-slide speed back up
+            autoSlideSpeedRef.current = Math.min(
+              SPEED_PPS,
+              autoSlideSpeedRef.current + (SPEED_PPS * dt) / 0.8
+            );
+
+            scrollAccumulatorRef.current += autoSlideSpeedRef.current * dt;
+
+            while (scrollAccumulatorRef.current >= setWidth * 3) {
+              scrollAccumulatorRef.current -= setWidth;
+            }
+            while (scrollAccumulatorRef.current < setWidth * 2) {
+              scrollAccumulatorRef.current += setWidth;
+            }
+
+            isProgrammaticScrollRef.current = true;
+            container.scrollLeft = scrollAccumulatorRef.current;
+          } else {
+            autoSlideSpeedRef.current = 0;
+          }
         }
       }
 
@@ -587,26 +719,34 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setTimeout(() => setIsFocused(false), 220)}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.key === 'Tab' || (e.key === 'ArrowRight' && (e.target as HTMLInputElement).selectionStart === 0)) && !query) {
+                      e.preventDefault();
+                      setQuery(ROTATING_SUGGESTIONS[suggestionIndex]);
+                    }
+                  }}
                   className="w-full text-sm sm:text-base text-brand-black bg-transparent outline-none focus:outline-none focus:ring-0 ring-0 font-medium z-10"
                   autoComplete="off"
                   spellCheck="false"
                 />
 
-                {/* Dynamic Animated Placeholder Overlay (Clean, Single-line, No-wrap) */}
+                {/* Dynamic Animated Placeholder Overlay (Clean, Single-line, Low Opacity, Continuously Rotating) */}
                 {!query && (
                   <div
                     onClick={() => inputRef.current?.focus()}
-                    className="absolute left-11 sm:left-12 right-12 sm:right-24 top-0 bottom-0 flex items-center pointer-events-none text-xs sm:text-sm md:text-base text-neutral-400 select-none overflow-hidden whitespace-nowrap"
+                    className={`absolute left-11 sm:left-12 right-12 sm:right-24 top-0 bottom-0 flex items-center pointer-events-none text-xs sm:text-sm md:text-base select-none overflow-hidden whitespace-nowrap transition-opacity duration-300 ${
+                      isFocused ? 'opacity-25' : 'opacity-40'
+                    }`}
                   >
                     <span className="shrink-0 font-normal text-neutral-400">Search&nbsp;</span>
                     <span className="inline-flex items-center overflow-hidden h-6 relative font-normal text-neutral-400 whitespace-nowrap">
                       <span
                         key={suggestionIndex}
-                        className="animate-kinetic-flip inline-flex items-center whitespace-nowrap text-neutral-400"
+                        className="animate-kinetic-flip inline-flex items-center whitespace-nowrap text-neutral-400 font-normal"
                       >
                         &ldquo;{ROTATING_SUGGESTIONS[suggestionIndex]}&rdquo;
                       </span>
-                      <span className="inline-block w-[2px] h-3.5 sm:h-4 bg-brand-lime ml-1.5 animate-cursor shrink-0" />
+                      <span className="inline-block w-[2px] h-3.5 sm:h-4 bg-brand-lime ml-1.5 animate-cursor shrink-0 opacity-80" />
                     </span>
                   </div>
                 )}
@@ -768,9 +908,11 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                   msOverflowStyle: 'none',
                   WebkitOverflowScrolling: 'touch',
                   touchAction: 'pan-y',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
                 }}
               >
-                {[0, 1, 2].map((setIdx) => (
+                {[0, 1, 2, 3, 4].map((setIdx) => (
                   <div
                     key={`set-${setIdx}`}
                     ref={setIdx === 0 ? firstSetRef : undefined}

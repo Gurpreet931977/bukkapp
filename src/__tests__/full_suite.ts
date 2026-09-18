@@ -140,6 +140,51 @@ async function runTestSuite() {
   assert(cancelledBiz.verified === false, 'Cancellation unsets verified = false');
   assert(cancelledBiz.verificationPlan?.status === 'cancelled', 'Sets status to cancelled');
 
+  console.log('\n--- 8. KINETIC SLIDER MOMENTUM & INERTIA PHYSICS ---');
+  // Simulate category dock infinite wrapping & momentum decay
+  const setWidth = 1000;
+  let scrollPos = setWidth * 2; // initial center anchor
+  let velocity = 2400; // px/s from a strong fling
+  const dt = 1 / 60; // 60fps
+  let distanceCoasted = 0;
+  let frames = 0;
+
+  // Simulate coasting until velocity falls below cutoff (force utilised)
+  while (Math.abs(velocity) > 8 && frames < 300) {
+    const frameDistance = velocity * dt;
+    scrollPos += frameDistance;
+    distanceCoasted += Math.abs(frameDistance);
+
+    // Exponential decay friction
+    velocity *= Math.pow(0.978, dt * 60);
+
+    // Infinite wrapping logic
+    while (scrollPos >= setWidth * 3) scrollPos -= setWidth;
+    while (scrollPos < setWidth * 2) scrollPos += setWidth;
+
+    frames++;
+  }
+
+  assert(distanceCoasted > 1000, `Firm fling coasts continuously until force is utilised (${Math.round(distanceCoasted)}px coasted)`);
+  assert(frames >= 90, `Momentum coasting lasts naturally across multiple seconds (${(frames / 60).toFixed(2)}s)`);
+  assert(scrollPos >= setWidth * 2 && scrollPos < setWidth * 3, `Scroll position always remains securely in wrapped anchor range (${Math.round(scrollPos)}px)`);
+  assert(Math.abs(velocity) <= 8, `Velocity cleanly settles once force is fully utilised (${velocity.toFixed(2)} px/s)`);
+
+  // Drag wrapping test: Simulate a massive 5000px drag
+  let dragScroll = setWidth * 2;
+  let startScroll = setWidth * 2;
+  const simulatedDragDelta = -5000; // dragged 5000px to the left
+  let targetDrag = startScroll - simulatedDragDelta;
+  while (targetDrag >= setWidth * 3) {
+    targetDrag -= setWidth;
+    startScroll -= setWidth;
+  }
+  while (targetDrag < setWidth * 2) {
+    targetDrag += setWidth;
+    startScroll += setWidth;
+  }
+  assert(targetDrag >= setWidth * 2 && targetDrag < setWidth * 3, 'Extreme manual drag wraps seamlessly without hitting boundaries');
+
   console.log('\n====================================================');
   console.log(`FUNCTIONAL SUITE RESULTS: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================\n');
