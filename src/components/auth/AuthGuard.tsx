@@ -103,11 +103,11 @@ export function AuthGuard({
           </div>
 
           <h2 className="text-2xl font-display font-extrabold text-brand-black mb-2">
-            {isAdminOnly ? 'Master Admin Privilege Required' : 'Access Restricted'}
+            {isAdminOnly ? 'Admin Privilege Required' : 'Access Restricted'}
           </h2>
           <p className="text-sm text-brand-muted leading-relaxed mb-6">
             {isAdminOnly
-              ? 'This administration control room is exclusively accessible to verified BUKKAPP master administrators.'
+              ? 'This administration control room is exclusively accessible to verified BUKKAPP administrators.'
               : isBusinessOnly
               ? 'This merchant management portal requires a registered business owner account. Standard customer accounts cannot view merchant controls.'
               : 'Your current account does not have permission to access this resource.'}

@@ -108,23 +108,26 @@ export default function CategoryPage() {
           <p className="text-xs font-bold uppercase tracking-wider text-brand-muted">
             Filter by Dehradun Area
           </p>
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {DEHRADUN_NEIGHBORHOODS.slice(0, 9).map((hood) => {
-              const isSelected = selectedNeighborhood === hood;
-              return (
-                <button
-                  key={hood}
-                  onClick={() => setSelectedNeighborhood(hood)}
-                  className={`text-xs font-semibold px-4 py-2 rounded-full whitespace-nowrap transition-all ${
-                    isSelected
-                      ? 'bg-brand-black text-white shadow-xs'
-                      : 'bg-white border border-brand-border text-brand-secondary hover:text-brand-black'
-                  }`}
-                >
-                  {hood}
-                </button>
-              );
-            })}
+          <div className="overflow-x-auto pb-2 no-scrollbar scroll-smooth">
+            <div className="flex items-center gap-2 w-max">
+              {DEHRADUN_NEIGHBORHOODS.slice(0, 9).map((hood) => {
+                const isSelected = selectedNeighborhood === hood;
+                return (
+                  <button
+                    key={hood}
+                    type="button"
+                    onClick={() => setSelectedNeighborhood(hood)}
+                    className={`shrink-0 text-xs font-semibold px-4 py-2 rounded-full whitespace-nowrap transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-brand-black text-white shadow-xs'
+                        : 'bg-white border border-brand-border text-brand-secondary hover:text-brand-black'
+                    }`}
+                  >
+                    {hood}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

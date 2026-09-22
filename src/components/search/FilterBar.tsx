@@ -61,24 +61,27 @@ export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBar
     <>
       <div className="bg-white rounded-2xl border border-brand-border/80 p-3.5 sm:p-5 shadow-subtle space-y-3 sm:space-y-4">
         {/* Top Filter Controls: Horizontal Scrollable Category Pills */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full no-scrollbar">
-            {categories.map((cat) => {
-              const isSelected = (!filters.category && cat.id === 'all') || filters.category === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategoryChange(cat.id)}
-                  className={`text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap transition-all tap-target ${
-                    isSelected
-                      ? 'bg-brand-black text-white shadow-xs'
-                      : 'bg-brand-surface-alt hover:bg-[#EBEBE5] text-brand-secondary hover:text-brand-black'
-                  }`}
-                >
-                  {cat.name}
-                </button>
-              );
-            })}
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <div className="flex-1 min-w-0 overflow-x-auto pb-1.5 no-scrollbar scroll-smooth">
+            <div className="flex items-center gap-2 w-max">
+              {categories.map((cat) => {
+                const isSelected = (!filters.category && cat.id === 'all') || filters.category === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => handleCategoryChange(cat.id)}
+                    className={`shrink-0 text-xs font-semibold px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer select-none tap-target ${
+                      isSelected
+                        ? 'bg-brand-black text-white shadow-xs font-bold'
+                        : 'bg-brand-surface-alt hover:bg-[#EAEAE4] text-brand-secondary hover:text-brand-black'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Mobile Filter Sheet Trigger Button */}
@@ -175,8 +178,13 @@ export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBar
           />
 
           <div className="relative w-full max-h-[85vh] bg-white rounded-t-3xl border-t border-brand-border flex flex-col shadow-modal animate-slide-up overflow-hidden">
+            {/* Mobile Pull / Drag Indicator */}
+            <div className="flex justify-center pt-2.5 pb-1">
+              <div className="w-10 h-1 rounded-full bg-neutral-300" />
+            </div>
+
             {/* Drawer Header */}
-            <div className="p-4 border-b border-brand-border/70 flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-brand-border/70 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-brand-black" />
                 <h3 className="font-extrabold text-base text-brand-black">Filters & Sorting</h3>
@@ -307,7 +315,7 @@ export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBar
             </div>
 
             {/* Sticky Action Footer */}
-            <div className="p-4 border-t border-brand-border/70 bg-white flex items-center gap-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="p-4 border-t border-brand-border/70 bg-white flex items-center gap-3 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
               {activeFilterCount > 0 && (
                 <button
                   onClick={() => {

@@ -140,28 +140,31 @@ export default function BusinessBookingsPage() {
         {/* Search & Tabs Filter */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
           {/* Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-            {(
-              [
-                { key: 'all', label: `All (${bookings.length})` },
-                { key: 'confirmed', label: `Upcoming (${bookings.filter((b) => b.status === 'confirmed').length})` },
-                { key: 'completed', label: `Completed (${bookings.filter((b) => b.status === 'completed').length})` },
-                { key: 'cancelled', label: `Cancelled (${bookings.filter((b) => b.status === 'cancelled').length})` },
-                { key: 'no_show', label: 'No-show' },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  activeTab === tab.key
-                    ? 'bg-brand-black text-white shadow-2xs'
-                    : 'bg-white border border-brand-border text-brand-secondary hover:text-brand-black'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div className="overflow-x-auto no-scrollbar scroll-smooth">
+            <div className="flex items-center gap-1.5 w-max">
+              {(
+                [
+                  { key: 'all', label: `All (${bookings.length})` },
+                  { key: 'confirmed', label: `Upcoming (${bookings.filter((b) => b.status === 'confirmed').length})` },
+                  { key: 'completed', label: `Completed (${bookings.filter((b) => b.status === 'completed').length})` },
+                  { key: 'cancelled', label: `Cancelled (${bookings.filter((b) => b.status === 'cancelled').length})` },
+                  { key: 'no_show', label: 'No-show' },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    activeTab === tab.key
+                      ? 'bg-brand-black text-white shadow-2xs'
+                      : 'bg-white border border-brand-border text-brand-secondary hover:text-brand-black'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Search Input */}
@@ -202,6 +205,15 @@ export default function BusinessBookingsPage() {
                       }`}
                     >
                       {bk.status}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                        bk.paymentStatus === 'paid'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-amber-100 text-amber-900 border border-amber-300'
+                      }`}
+                    >
+                      {bk.paymentStatus === 'paid' ? '✓ Paid Online' : 'Collect at Venue'}
                     </span>
                   </div>
 

@@ -34,23 +34,26 @@ export function NearYouSection({ businesses }: NearYouSectionProps) {
       </div>
 
       {/* Neighborhood Pills Filter */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">
-        {DEHRADUN_NEIGHBORHOODS.slice(0, 8).map((hood) => {
-          const isSelected = selectedNeighborhood === hood;
-          return (
-            <button
-              key={hood}
-              onClick={() => setSelectedNeighborhood(hood)}
-              className={`text-xs font-bold px-4 py-2 rounded-full whitespace-nowrap transition-all select-none ${
-                isSelected
-                  ? 'bg-brand-black text-white shadow-2xs'
-                  : 'bg-white border border-brand-border text-brand-secondary hover:text-brand-black hover:border-neutral-400'
-              }`}
-            >
-              {hood}
-            </button>
-          );
-        })}
+      <div className="overflow-x-auto pb-3 mb-6 no-scrollbar scroll-smooth">
+        <div className="flex items-center gap-2 w-max">
+          {DEHRADUN_NEIGHBORHOODS.slice(0, 8).map((hood) => {
+            const isSelected = selectedNeighborhood === hood;
+            return (
+              <button
+                key={hood}
+                type="button"
+                onClick={() => setSelectedNeighborhood(hood)}
+                className={`shrink-0 text-xs font-bold px-4 py-2 rounded-full whitespace-nowrap transition-all select-none cursor-pointer ${
+                  isSelected
+                    ? 'bg-brand-black text-white shadow-2xs'
+                    : 'bg-white border border-brand-border text-brand-secondary hover:text-brand-black hover:border-neutral-400'
+                }`}
+              >
+                {hood}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Grid */}

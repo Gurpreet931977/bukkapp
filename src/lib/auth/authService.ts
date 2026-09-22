@@ -1,7 +1,8 @@
 'use client';
 
-import { User, UserRole } from '@/types';
+import { User, UserRole, Business } from '@/types';
 import { store } from '@/lib/db/store';
+import { hashPassword, verifyPassword, PRE_HASHED_SEEDS, isHashed } from '@/lib/security/crypto';
 
 export interface AuthSession {
   user: User;
@@ -28,15 +29,15 @@ export interface SignupBusinessData {
 const STORAGE_KEY_SESSION = 'bukkapp_auth_session_v2';
 const STORAGE_KEY_USERS = 'bukkapp_registered_users_v2';
 
-// Pre-seeded Master Admin & Verified Accounts
+// Pre-seeded Admin & Verified Accounts (All Cryptographically Hashed)
 export const DEFAULT_ACCOUNTS: (User & { passwordHash: string })[] = [
   {
     id: 'usr-admin-master',
-    name: 'Master Administrator',
+    name: 'Administrator',
     email: 'admin@bukkapp.in',
     phone: '+91 11223 34455',
     role: 'admin',
-    passwordHash: 'AdminPass123!',
+    passwordHash: PRE_HASHED_SEEDS.ADMIN_HASH,
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
     createdAt: '2026-08-01T08:00:00Z',
   },
@@ -47,7 +48,7 @@ export const DEFAULT_ACCOUNTS: (User & { passwordHash: string })[] = [
     phone: '+91 98123 45678',
     role: 'business_owner',
     businessId: 'biz-smile-studio',
-    passwordHash: 'Business123!',
+    passwordHash: PRE_HASHED_SEEDS.MERCHANT_HASH,
     avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=150&q=80',
     createdAt: '2026-08-01T10:00:00Z',
   },
@@ -57,19 +58,27 @@ export const DEFAULT_ACCOUNTS: (User & { passwordHash: string })[] = [
     email: 'gurpreet@bukkapp.in',
     phone: '+91 98765 43210',
     role: 'customer',
-    passwordHash: 'Customer123!',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-    createdAt: '2026-08-01T10:00:00Z',
+    passwordHash: PRE_HASHED_SEEDS.CUSTOMER_HASH,
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    createdAt: '2026-08-01T12:00:00Z',
   },
 ];
 
 class AuthService {
+  private static instance: AuthService;
   private currentUser: User | null = null;
   private registeredUsers: (User & { passwordHash: string })[] = [...DEFAULT_ACCOUNTS];
   private listeners: (() => void)[] = [];
 
   constructor() {
     this.initAuth();
+  }
+
+  public static getInstance(): AuthService {
+    if (!AuthService.instance) {
+      AuthService.instance = new AuthService();
+    }
+    return AuthService.instance;
   }
 
   private initAuth() {
@@ -80,6 +89,11 @@ class AuthService {
       const storedUsers = localStorage.getItem(STORAGE_KEY_USERS);
       if (storedUsers) {
         this.registeredUsers = JSON.parse(storedUsers);
+        const adminIdx = this.registeredUsers.findIndex((u) => u.id === 'usr-admin-master' || u.role === 'admin');
+        if (adminIdx !== -1) {
+          this.registeredUsers[adminIdx].passwordHash = PRE_HASHED_SEEDS.ADMIN_HASH;
+          this.registeredUsers[adminIdx].name = 'Administrator';
+        }
       } else {
         localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(DEFAULT_ACCOUNTS));
       }
@@ -130,7 +144,7 @@ class AuthService {
     return this.currentUser.role === role;
   }
 
-  public login(email: string, password?: string): { success: boolean; error?: string; user?: User } {
+  public async login(email: string, password?: string): Promise<{ success: boolean; error?: string; user?: User }> {
     const trimmedEmail = email.trim().toLowerCase();
     const found = this.registeredUsers.find((u) => u.email.toLowerCase() === trimmedEmail);
 
@@ -138,9 +152,17 @@ class AuthService {
       return { success: false, error: 'No account found with this email address.' };
     }
 
-    // If password provided and registered user has a passwordHash, verify it
-    if (password && found.passwordHash && found.passwordHash !== password) {
-      return { success: false, error: 'Incorrect password entered.' };
+    // If password provided and registered user has a passwordHash, verify it cryptographically
+    if (password && found.passwordHash) {
+      const isValid = await verifyPassword(password, found.passwordHash);
+      if (!isValid) {
+        return { success: false, error: 'Incorrect password entered.' };
+      }
+      // If legacy unhashed password was verified, automatically upgrade it to PBKDF2 hash
+      if (!isHashed(found.passwordHash)) {
+        found.passwordHash = await hashPassword(password);
+        this.persistUsers();
+      }
     }
 
     const { passwordHash, ...userClean } = found;
@@ -161,11 +183,13 @@ class AuthService {
     return { success: true, user: userClean };
   }
 
-  public signupCustomer(data: SignupCustomerData): { success: boolean; error?: string; user?: User } {
+  public async signupCustomer(data: SignupCustomerData): Promise<{ success: boolean; error?: string; user?: User }> {
     const email = data.email.trim().toLowerCase();
     if (this.registeredUsers.some((u) => u.email.toLowerCase() === email)) {
       return { success: false, error: 'An account with this email already exists.' };
     }
+
+    const hashedPassword = await hashPassword(data.password || 'BukkappPass123!');
 
     const newUser: User & { passwordHash: string } = {
       id: `usr-cust-${Date.now()}`,
@@ -173,7 +197,7 @@ class AuthService {
       email,
       phone: data.phone.trim(),
       role: 'customer',
-      passwordHash: data.password || 'BukkappPass123!',
+      passwordHash: hashedPassword,
       createdAt: new Date().toISOString(),
     };
 
@@ -183,7 +207,7 @@ class AuthService {
     return this.login(email, data.password);
   }
 
-  public signupBusiness(data: SignupBusinessData): { success: boolean; error?: string; user?: User } {
+  public async signupBusiness(data: SignupBusinessData): Promise<{ success: boolean; error?: string; user?: User }> {
     const email = data.email.trim().toLowerCase();
     if (this.registeredUsers.some((u) => u.email.toLowerCase() === email)) {
       return { success: false, error: 'An account with this email already exists.' };
@@ -196,6 +220,7 @@ class AuthService {
       .replace(/(^-|-$)/g, '');
 
     const newBusinessId = `biz-${newBusinessSlug}-${Date.now().toString().slice(-4)}`;
+    const hashedPassword = await hashPassword(data.password || 'BukkappPass123!');
 
     const newUser: User & { passwordHash: string } = {
       id: newUserId,
@@ -204,7 +229,7 @@ class AuthService {
       phone: data.phone.trim(),
       role: 'business_owner',
       businessId: newBusinessId,
-      passwordHash: data.password || 'BukkappPass123!',
+      passwordHash: hashedPassword,
       createdAt: new Date().toISOString(),
     };
 

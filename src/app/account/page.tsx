@@ -141,37 +141,39 @@ function AccountContent() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 border-b border-brand-border/80 pb-3">
-          <button
-            onClick={() => handleTabChange('upcoming')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'upcoming'
-                ? 'bg-brand-black text-white shadow-xs'
-                : 'bg-white text-brand-secondary hover:text-brand-black border border-brand-border'
-            }`}
-          >
-            Upcoming Appointments ({upcomingBookings.length})
-          </button>
-          <button
-            onClick={() => handleTabChange('past')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'past'
-                ? 'bg-brand-black text-white shadow-xs'
-                : 'bg-white text-brand-secondary hover:text-brand-black border border-brand-border'
-            }`}
-          >
-            Past History ({pastBookings.length})
-          </button>
-          <button
-            onClick={() => handleTabChange('favorites')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'favorites'
-                ? 'bg-brand-black text-white shadow-xs'
-                : 'bg-white text-brand-secondary hover:text-brand-black border border-brand-border'
-            }`}
-          >
-            Saved Businesses ({favorites.length})
-          </button>
+        <div className="overflow-x-auto no-scrollbar pb-3 border-b border-brand-border/80">
+          <div className="flex items-center gap-2 w-max">
+            <button
+              onClick={() => handleTabChange('upcoming')}
+              className={`px-4 py-2.5 min-h-[40px] rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                activeTab === 'upcoming'
+                  ? 'bg-brand-black text-white shadow-xs'
+                  : 'bg-white text-brand-secondary hover:text-brand-black border border-brand-border'
+              }`}
+            >
+              Upcoming Appointments ({upcomingBookings.length})
+            </button>
+            <button
+              onClick={() => handleTabChange('past')}
+              className={`px-4 py-2.5 min-h-[40px] rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                activeTab === 'past'
+                  ? 'bg-brand-black text-white shadow-xs'
+                  : 'bg-white text-brand-secondary hover:text-brand-black border border-brand-border'
+              }`}
+            >
+              Past History ({pastBookings.length})
+            </button>
+            <button
+              onClick={() => handleTabChange('favorites')}
+              className={`px-4 py-2.5 min-h-[40px] rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                activeTab === 'favorites'
+                  ? 'bg-brand-black text-white shadow-xs'
+                  : 'bg-white text-brand-secondary hover:text-brand-black border border-brand-border'
+              }`}
+            >
+              Saved Businesses ({favorites.length})
+            </button>
+          </div>
         </div>
 
         {/* TAB 1: UPCOMING BOOKINGS */}
@@ -194,9 +196,20 @@ function AccountContent() {
                             {b.businessName}
                           </Link>
                         </div>
-                        <span className="text-xs font-black text-brand-black bg-brand-surface-alt px-2.5 py-1 rounded-lg border border-brand-border">
-                          {formatPrice(b.servicePrice)}
-                        </span>
+                        <div className="text-right flex flex-col items-end gap-1">
+                          <span className="text-xs font-black text-brand-black bg-brand-surface-alt px-2.5 py-1 rounded-lg border border-brand-border">
+                            {formatPrice(b.servicePrice)}
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                              b.paymentStatus === 'paid'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
+                            }`}
+                          >
+                            {b.paymentStatus === 'paid' ? 'Paid (Cashfree)' : 'Pay at Venue'}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="p-3.5 rounded-xl bg-brand-surface-alt border border-brand-border/60 space-y-1.5 text-xs">

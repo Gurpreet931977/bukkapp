@@ -101,6 +101,7 @@ export interface Business {
   schedule: DaySchedule[];
   resources?: Resource[];
   active: boolean;
+  isDemo?: boolean;
   distanceKm?: number;
   nextAvailableSlot?: string;
   pageViewsThisWeek?: number;
@@ -179,7 +180,11 @@ export interface Booking {
   startTime: string; // "10:00"
   endTime: string; // "10:45"
   status: BookingStatus;
-  paymentStatus: 'paid_simulated' | 'simulated_success' | 'pending' | 'refunded';
+  paymentStatus: 'paid_simulated' | 'simulated_success' | 'pending' | 'refunded' | 'paid' | 'failed' | 'pay_at_venue';
+  paymentMethod?: 'cashfree_upi' | 'cashfree_card' | 'cashfree_netbanking' | 'pay_at_venue' | string;
+  paymentOrderId?: string;
+  transactionId?: string;
+  paidAt?: string;
   notes?: string;
   specialRequests?: string;
   cancellationReason?: string;

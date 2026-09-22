@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { BookingEngine } from '@/lib/booking/engine';
 import { store } from '@/lib/db/store';
 import { cn, formatPrice, formatTime24to12, getTodayDateString, getTomorrowDateString, formatDatePretty } from '@/lib/utils';
-import { Clock, Calendar, ShieldCheck, CheckCircle2, User as UserIcon, Phone, Mail, FileText, AlertCircle, ArrowLeft, ArrowRight, ChevronDown, Check } from 'lucide-react';
+import { Clock, Calendar, ShieldCheck, CheckCircle2, User as UserIcon, Phone, Mail, FileText, AlertCircle, ArrowLeft, ArrowRight, ChevronDown, Check, CreditCard, Banknote, Sparkles, Lock } from 'lucide-react';
 
 interface BookingFlowModalProps {
   isOpen: boolean;
@@ -31,19 +31,23 @@ export function BookingFlowModal({
   const todayStr = getTodayDateString();
   const tomorrowStr = getTomorrowDateString();
 
-  const businessServices = business ? store.getServicesByBusinessId(business.id) : [];
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+
+  // Selected Service
+  const businessServices = business ? store.getServicesByBusinessId(business.id) : [];
   const [activeService, setActiveService] = useState<Service | null>(selectedService || businessServices[0] || null);
   const [isSelectingService, setIsSelectingService] = useState(false);
 
-  // Customer Contact Fields
+  // Form State
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
+  const [paymentChoice, setPaymentChoice] = useState<'cashfree' | 'pay_at_venue'>('cashfree');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Prefill authenticated user credentials if signed in
@@ -111,33 +115,136 @@ export function BookingFlowModal({
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    try {
-      // Simulate minor network processing
-      await new Promise((resolve) => setTimeout(resolve, 600));
+    // Option A: Pay at Venue
+    if (paymentChoice === 'pay_at_venue') {
+      try {
+        setProcessingStatus('Securing your appointment...');
+        await new Promise((resolve) => setTimeout(resolve, 400));
 
-      const booking = store.createBooking({
-        userId: store.getCurrentUser().id || 'usr-guest',
-        customerName,
-        customerPhone,
-        customerEmail,
-        business,
-        service: activeService,
-        date: selectedDate,
-        startTime: selectedSlot,
-        specialRequests,
+        const booking = store.createBookingAtomically({
+          userId: store.getCurrentUser()?.id || 'usr-guest',
+          customerName,
+          customerPhone,
+          customerEmail,
+          business,
+          service: activeService,
+          date: selectedDate,
+          startTime: selectedSlot,
+          specialRequests,
+          paymentStatus: 'pay_at_venue',
+          paymentMethod: 'pay_at_venue',
+        });
+
+        setIsSubmitting(false);
+        setProcessingStatus(null);
+        onClose();
+
+        if (onBookingSuccess) {
+          onBookingSuccess(booking.id);
+        } else {
+          router.push(`/booking/${booking.id}`);
+        }
+      } catch (err: any) {
+        setIsSubmitting(false);
+        setProcessingStatus(null);
+        setErrorMessage(err.message || 'Slot collision occurred. Please choose another time.');
+      }
+      return;
+    }
+
+    // Option B: Pay Online via Cashfree
+    try {
+      setProcessingStatus('Initializing Cashfree Secure Gateway...');
+      const response = await fetch('/api/payments/cashfree/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: business.id,
+          serviceId: activeService.id,
+          customerName,
+          customerPhone,
+          customerEmail,
+          date: selectedDate,
+          startTime: selectedSlot,
+          specialRequests,
+          userId: store.getCurrentUser()?.id,
+        }),
       });
 
-      setIsSubmitting(false);
-      onClose();
+      const data = await response.json();
 
-      if (onBookingSuccess) {
-        onBookingSuccess(booking.id);
-      } else {
-        router.push(`/booking/${booking.id}`);
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to create payment order with Cashfree');
       }
+
+      const { orderId, paymentSessionId, bookingId, isSimulated } = data;
+
+      // Handle Sandbox simulation mode
+      if (isSimulated || paymentSessionId.startsWith('session_sim_')) {
+        setProcessingStatus('Simulating verified UPI payment on Cashfree Sandbox...');
+        await new Promise((res) => setTimeout(res, 800));
+
+        const verifyRes = await fetch('/api/payments/cashfree/verify-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, bookingId }),
+        });
+        const verifyData = await verifyRes.json();
+
+        setIsSubmitting(false);
+        setProcessingStatus(null);
+        onClose();
+
+        const finalBookingId = (verifyData.success && verifyData.bookingId) || bookingId;
+        if (onBookingSuccess) {
+          onBookingSuccess(finalBookingId);
+        } else {
+          router.push(`/booking/${finalBookingId}?payment=success`);
+        }
+        return;
+      }
+
+      // Live / Sandbox Drop-in Checkout
+      setProcessingStatus('Opening Cashfree Checkout...');
+      const { load } = await import('@cashfreepayments/cashfree-js');
+      const cashfreeEnv = process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production' ? 'production' : 'sandbox';
+      const cashfree = await load({ mode: cashfreeEnv });
+
+      cashfree.checkout({
+        paymentSessionId,
+        redirectTarget: '_modal',
+      }).then(async (result: any) => {
+        if (result.error) {
+          setIsSubmitting(false);
+          setProcessingStatus(null);
+          setErrorMessage(result.error.message || 'Payment was cancelled or failed.');
+          return;
+        }
+
+        setProcessingStatus('Confirming payment receipt with Cashfree...');
+        const verifyRes = await fetch('/api/payments/cashfree/verify-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, bookingId }),
+        });
+        const verifyData = await verifyRes.json();
+
+        setIsSubmitting(false);
+        setProcessingStatus(null);
+        onClose();
+
+        if (verifyData.success) {
+          if (onBookingSuccess) onBookingSuccess(bookingId);
+          else router.push(`/booking/${bookingId}?payment=success`);
+        } else {
+          if (onBookingSuccess) onBookingSuccess(bookingId);
+          else router.push(`/booking/${bookingId}`);
+        }
+      });
     } catch (err: any) {
       setIsSubmitting(false);
-      setErrorMessage(err.message || 'Slot collision occurred. Please choose another time.');
+      setProcessingStatus(null);
+      setErrorMessage(err.message || 'Payment initialization error. Please try again.');
     }
   };
 
@@ -365,11 +472,11 @@ export function BookingFlowModal({
                                 type="button"
                                 disabled={!slot.isAvailable}
                                 onClick={() => setSelectedSlot(slot.time)}
-                                className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border text-center ${
+                                className={`py-2.5 px-2 min-h-[44px] rounded-xl text-xs font-bold transition-all border text-center flex items-center justify-center ${
                                   isSelected
                                     ? 'bg-brand-lime text-brand-black border-brand-black shadow-xs scale-102'
                                     : slot.isAvailable
-                                    ? 'bg-brand-surface-alt hover:bg-[#EAEAE4] text-brand-black border-brand-border'
+                                    ? 'bg-brand-surface-alt hover:bg-[#EAEAE4] active:scale-95 text-brand-black border-brand-border'
                                     : 'bg-neutral-50 text-neutral-300 border-neutral-100 cursor-not-allowed line-through'
                                 }`}
                               >
@@ -443,7 +550,7 @@ export function BookingFlowModal({
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="e.g. Rahul Verma"
-                    className="w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-white border border-brand-border focus:border-brand-black focus:outline-hidden font-medium"
+                    className="w-full pl-9 pr-3 py-2.5 text-base sm:text-sm rounded-xl bg-white border border-brand-border focus:border-brand-black focus:outline-hidden font-medium"
                   />
                 </div>
               </div>
@@ -459,7 +566,7 @@ export function BookingFlowModal({
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       placeholder="+91 98765 43210"
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-white border border-brand-border focus:border-brand-black focus:outline-hidden font-medium"
+                      className="w-full pl-9 pr-3 py-2.5 text-base sm:text-sm rounded-xl bg-white border border-brand-border focus:border-brand-black focus:outline-hidden font-medium"
                     />
                   </div>
                 </div>
@@ -474,7 +581,7 @@ export function BookingFlowModal({
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
                       placeholder="rahul@example.com"
-                      className="w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-white border border-brand-border focus:border-brand-black focus:outline-hidden font-medium"
+                      className="w-full pl-9 pr-3 py-2.5 text-base sm:text-sm rounded-xl bg-white border border-brand-border focus:border-brand-black focus:outline-hidden font-medium"
                     />
                   </div>
                 </div>
@@ -491,8 +598,95 @@ export function BookingFlowModal({
                     value={specialRequests}
                     onChange={(e) => setSpecialRequests(e.target.value)}
                     placeholder="Any specific requests, allergies, vehicle model, or court preferences..."
-                    className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-white border border-brand-border focus:border-brand-black focus:outline-hidden font-medium"
+                    className="w-full pl-9 pr-3 py-2.5 text-base sm:text-sm rounded-xl bg-white border border-brand-border focus:border-brand-black focus:outline-hidden font-medium"
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div className="space-y-2.5 pt-2 border-t border-brand-border/60">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider text-brand-black block">
+                  Choose Payment Method
+                </label>
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                  Cashfree Protected
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Option 1: Cashfree Online */}
+                <div
+                  onClick={() => setPaymentChoice('cashfree')}
+                  className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer relative flex flex-col justify-between select-none ${
+                    paymentChoice === 'cashfree'
+                      ? 'border-brand-black bg-[#FAFDF4] shadow-2xs'
+                      : 'border-brand-border bg-white hover:bg-brand-surface-alt'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center border shrink-0 ${
+                          paymentChoice === 'cashfree'
+                            ? 'bg-brand-black text-brand-lime border-brand-black'
+                            : 'bg-brand-surface-alt text-brand-black border-brand-border'
+                        }`}
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-brand-black">Pay Online (Cashfree)</p>
+                        <p className="text-[10px] text-brand-secondary">UPI, Cards, NetBanking</p>
+                      </div>
+                    </div>
+                    {paymentChoice === 'cashfree' && (
+                      <CheckCircle2 className="w-4 h-4 text-brand-black shrink-0 mt-0.5" />
+                    )}
+                  </div>
+                  <div className="mt-2 pt-1.5 border-t border-brand-border/60 flex items-center justify-between text-[10px]">
+                    <span className="font-semibold text-emerald-700 flex items-center gap-0.5">
+                      <Sparkles className="w-2.5 h-2.5" /> Instant Lock
+                    </span>
+                    <span className="font-bold text-brand-black">{activeService ? formatPrice(activeService.price) : ''}</span>
+                  </div>
+                </div>
+
+                {/* Option 2: Pay at Venue */}
+                <div
+                  onClick={() => setPaymentChoice('pay_at_venue')}
+                  className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer relative flex flex-col justify-between select-none ${
+                    paymentChoice === 'pay_at_venue'
+                      ? 'border-brand-black bg-[#FAFDF4] shadow-2xs'
+                      : 'border-brand-border bg-white hover:bg-brand-surface-alt'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center border shrink-0 ${
+                          paymentChoice === 'pay_at_venue'
+                            ? 'bg-brand-black text-brand-lime border-brand-black'
+                            : 'bg-brand-surface-alt text-brand-black border-brand-border'
+                        }`}
+                      >
+                        <Banknote className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-brand-black">Pay at Venue</p>
+                        <p className="text-[10px] text-brand-secondary">Cash or UPI upon arrival</p>
+                      </div>
+                    </div>
+                    {paymentChoice === 'pay_at_venue' && (
+                      <CheckCircle2 className="w-4 h-4 text-brand-black shrink-0 mt-0.5" />
+                    )}
+                  </div>
+                  <div className="mt-2 pt-1.5 border-t border-brand-border/60 flex items-center justify-between text-[10px]">
+                    <span className="text-brand-secondary font-medium">Zero Prepayment</span>
+                    <span className="font-bold text-brand-black">{activeService ? formatPrice(activeService.price) : ''}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -500,8 +694,19 @@ export function BookingFlowModal({
             {/* Instant Booking Guarantee Badge */}
             <div className="p-3 rounded-xl bg-[#FAFDF4] border border-[#D5F58D] flex items-center gap-2.5 text-xs text-brand-black">
               <ShieldCheck className="w-4 h-4 text-[#558B07] shrink-0" />
-              <span>Instant slot lock with server-side validation. Zero cancellation charges.</span>
+              {paymentChoice === 'cashfree' ? (
+                <span>Instant slot lock with Cashfree. 100% refund on timely cancellation.</span>
+              ) : (
+                <span>Instant slot lock with server-side validation. Zero cancellation charges.</span>
+              )}
             </div>
+
+            {processingStatus && (
+              <div className="p-3 rounded-xl bg-brand-lime/30 border border-brand-black/20 text-xs font-semibold text-brand-black flex items-center gap-2">
+                <Lock className="w-4 h-4 text-brand-black shrink-0 animate-spin" />
+                <span>{processingStatus}</span>
+              </div>
+            )}
 
             {/* Buttons */}
             <div className="pt-3 border-t border-brand-border/60 flex items-center justify-between gap-3">
@@ -517,7 +722,11 @@ export function BookingFlowModal({
                 isLoading={isSubmitting}
                 className="px-8 font-bold"
               >
-                <span>Confirm & Lock Booking</span>
+                {paymentChoice === 'cashfree' ? (
+                  <span>Pay with Cashfree ({activeService ? formatPrice(activeService.price) : ''})</span>
+                ) : (
+                  <span>Confirm & Pay at Venue</span>
+                )}
                 <CheckCircle2 className="w-4 h-4" />
               </Button>
             </div>

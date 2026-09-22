@@ -56,7 +56,7 @@ export function BusinessCTA() {
 
             <div className="pt-4 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-500">
               <span>Onboarding takes under 3 minutes</span>
-              <span className="text-white font-bold">100% Free Launch Tier</span>
+              <span className="text-white font-bold">Zero Setup Fee</span>
             </div>
           </div>
         </div>

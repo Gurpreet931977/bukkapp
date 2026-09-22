@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     name TEXT NOT NULL,
     phone TEXT UNIQUE NOT NULL,               -- Primary key for Free Phone OTP
     email TEXT UNIQUE,                        -- Optional for Phone OTP, Required for Admin
+    password_hash TEXT,                       -- Cryptographic Bcrypt/Argon2 salt & hash (pgcrypto)
     firebase_uid TEXT UNIQUE,                 -- Link to Firebase Phone Auth session
     role user_role DEFAULT 'customer' NOT NULL,
     avatar_url TEXT,
@@ -185,6 +186,10 @@ CREATE TABLE IF NOT EXISTS public.bookings (
     duration_minutes INTEGER NOT NULL,
     status booking_status DEFAULT 'confirmed' NOT NULL,
     payment_status TEXT DEFAULT 'paid_simulated' NOT NULL,
+    payment_method TEXT,                        -- e.g. cashfree_upi, cashfree_card, pay_at_venue
+    payment_order_id TEXT,                      -- Cashfree order reference
+    transaction_id TEXT,                        -- Cashfree payment transaction ID
+    paid_at TIMESTAMPTZ,                        -- Confirmed payment timestamp
     notes TEXT,
     cancellation_reason TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -340,19 +345,46 @@ CREATE POLICY "Allow read audit logs" ON public.audit_logs
     FOR SELECT USING (TRUE);
 
 -- ==============================================================================
--- 6. SEED PRE-POPULATION (MASTER ADMIN & CATEGORIES)
+-- 6. SECURITY FUNCTIONS & PRE-POPULATION
 -- ==============================================================================
 
--- Pre-seed Master Admin Account
-INSERT INTO public.users (id, name, email, phone, role)
+-- Secure Constant-Time Password Verification Function (pgcrypto)
+CREATE OR REPLACE FUNCTION public.verify_user_credentials(
+    p_email TEXT,
+    p_password TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_stored_hash TEXT;
+BEGIN
+    SELECT password_hash INTO v_stored_hash
+    FROM public.users
+    WHERE LOWER(email) = LOWER(TRIM(p_email));
+
+    IF v_stored_hash IS NULL THEN
+        RETURN FALSE;
+    END IF;
+
+    RETURN (v_stored_hash = crypt(p_password, v_stored_hash));
+END;
+$$;
+
+-- Pre-seed Admin Account with Cryptographic Hash (Bcrypt cost 12 via pgcrypto)
+INSERT INTO public.users (id, name, email, phone, role, password_hash)
 VALUES (
   'usr-admin-master',
-  'Master Administrator',
+  'Administrator',
   'admin@bukkapp.in',
   '+91 11223 34455',
-  'admin'
+  'admin',
+  crypt('BukkappAdmin0926', gen_salt('bf', 12))
 )
-ON CONFLICT (id) DO UPDATE SET role = 'admin';
+ON CONFLICT (id) DO UPDATE SET 
+  role = 'admin',
+  password_hash = crypt('BukkappAdmin0926', gen_salt('bf', 12));
 
 -- Pre-seed 10 Core Verticals
 INSERT INTO public.categories (id, name, slug, description, icon, count, active)

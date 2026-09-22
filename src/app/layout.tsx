@@ -112,6 +112,7 @@ const jsonLd = {
   ],
 };
 
+import { Suspense } from 'react';
 import { Preloader } from '@/components/ui/Preloader';
 
 export default function RootLayout({
@@ -135,7 +136,9 @@ export default function RootLayout({
               <Navbar />
               <div className="flex-1 pb-16 md:pb-0">{children}</div>
               <Footer />
-              <MobileBottomNav />
+              <Suspense fallback={null}>
+                <MobileBottomNav />
+              </Suspense>
             </ToastProvider>
           </AuthProvider>
         </SmoothScrollProvider>

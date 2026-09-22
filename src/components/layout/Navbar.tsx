@@ -155,7 +155,7 @@ export function Navbar() {
                         <p className="text-xs font-black text-brand-black truncate mt-0.5">
                           {user.name}
                         </p>
-                        <p className="text-[11px] text-brand-muted truncate">{user.email}</p>
+                        <p className="text-[11px] text-brand-muted truncate">{user.email || user.phone}</p>
                         <span
                           className={`inline-block mt-1.5 text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                             role === 'admin'
@@ -166,7 +166,7 @@ export function Navbar() {
                           }`}
                         >
                           {role === 'admin'
-                            ? 'Master Admin'
+                            ? 'Admin'
                             : role === 'business_owner'
                             ? 'Verified Merchant'
                             : 'Customer'}
@@ -291,7 +291,7 @@ export function Navbar() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 text-brand-black hover:bg-brand-surface-alt rounded-lg transition-colors"
+              className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-brand-black hover:bg-brand-surface-alt rounded-xl transition-colors active:scale-95"
               aria-label="Toggle Navigation"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -307,7 +307,7 @@ export function Navbar() {
                 setIsLocationOpen(true);
                 setIsMobileMenuOpen(false);
               }}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-brand-surface-alt border border-brand-border text-xs font-bold text-brand-black"
+              className="w-full flex items-center justify-between p-3 min-h-[44px] rounded-xl bg-brand-surface-alt border border-brand-border text-xs font-bold text-brand-black active:scale-98 transition-all"
             >
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-neutral-600" />
@@ -320,7 +320,7 @@ export function Navbar() {
               <Link
                 href="/search"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3 py-2.5 rounded-xl text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2"
+                className="px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2 active:scale-98 transition-all"
               >
                 <Search className="w-4 h-4 text-neutral-500" />
                 <span>Search & Explore</span>
@@ -328,7 +328,7 @@ export function Navbar() {
               <Link
                 href="/#categories"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3 py-2.5 rounded-xl text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2"
+                className="px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2 active:scale-98 transition-all"
               >
                 <Layers className="w-4 h-4 text-neutral-500" />
                 <span>Categories</span>
@@ -339,7 +339,7 @@ export function Navbar() {
                   <Link
                     href="/account"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-3 py-2.5 rounded-xl text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2"
+                    className="px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2 active:scale-98 transition-all"
                   >
                     <Calendar className="w-4 h-4 text-neutral-500" />
                     <span>My Bookings</span>
@@ -349,7 +349,7 @@ export function Navbar() {
                     <Link
                       href="/business/dashboard"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="px-3 py-2.5 rounded-xl text-xs font-bold text-[#427003] hover:bg-[#FAFDF4] flex items-center gap-2"
+                      className="px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-bold text-[#427003] hover:bg-[#FAFDF4] flex items-center gap-2 active:scale-98 transition-all"
                     >
                       <Store className="w-4 h-4 text-[#558B07]" />
                       <span>Business Dashboard</span>
@@ -360,7 +360,7 @@ export function Navbar() {
                     <Link
                       href="/admin"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="px-3 py-2.5 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-50 flex items-center gap-2"
+                      className="px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-50 flex items-center gap-2 active:scale-98 transition-all"
                     >
                       <Shield className="w-4 h-4 text-purple-600" />
                       <span>Admin Portal</span>
@@ -374,7 +374,7 @@ export function Navbar() {
               {isAuthenticated ? (
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200"
+                  className="w-full flex items-center justify-center gap-2 p-2.5 min-h-[44px] rounded-xl text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 active:scale-98 transition-all"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Sign Out ({user?.name})</span>
@@ -384,14 +384,14 @@ export function Navbar() {
                   <Link
                     href="/login"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full text-center py-2.5 px-4 rounded-xl border border-brand-border text-xs font-bold text-brand-black bg-neutral-50 hover:bg-neutral-100"
+                    className="w-full text-center py-2.5 px-4 min-h-[44px] flex items-center justify-center rounded-xl border border-brand-border text-xs font-bold text-brand-black bg-neutral-50 hover:bg-neutral-100 active:scale-98 transition-all"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/signup"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full text-center py-2.5 px-4 rounded-xl bg-[#C7F36B] text-xs font-extrabold text-brand-black hover:bg-[#bbf054]"
+                    className="w-full text-center py-2.5 px-4 min-h-[44px] flex items-center justify-center rounded-xl bg-[#C7F36B] text-xs font-extrabold text-brand-black hover:bg-[#bbf054] active:scale-98 transition-all"
                   >
                     Get Started
                   </Link>

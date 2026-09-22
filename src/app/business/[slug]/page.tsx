@@ -132,7 +132,7 @@ export default function BusinessProfilePage() {
               variant="primary"
               size="sm"
               onClick={() => handleStartBooking()}
-              className="font-bold text-xs px-4 bg-brand-black text-white"
+              className="hidden sm:inline-flex font-bold text-xs px-4 bg-brand-black text-white"
             >
               Book appointment
             </Button>
@@ -463,16 +463,16 @@ export default function BusinessProfilePage() {
       </div>
 
       {/* Sticky Mobile Booking Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 lg:hidden p-3.5 bg-white/95 backdrop-blur-md border-t border-brand-border shadow-modal flex items-center justify-between gap-4">
-        <div>
-          <span className="text-[10px] text-brand-muted block uppercase tracking-wider font-bold">Starting from</span>
+      <div className="fixed bottom-0 left-0 right-0 z-30 lg:hidden px-4 py-3 bg-white/95 backdrop-blur-md border-t border-brand-border shadow-modal flex items-center justify-between gap-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
+        <div className="min-w-0">
+          <span className="text-[10px] text-brand-muted block uppercase tracking-wider font-bold truncate">Starting from</span>
           <span className="text-base font-black text-brand-black">{formatPrice(business.startingPrice)}</span>
         </div>
         <Button
           variant="accent"
           size="md"
           onClick={() => handleStartBooking()}
-          className="font-black text-xs px-6 py-2.5 bg-brand-lime text-brand-black btn-press"
+          className="font-black text-xs px-5 py-2.5 bg-brand-lime text-brand-black btn-press shrink-0 shadow-xs"
         >
           <span>Select Service & Slot</span>
         </Button>

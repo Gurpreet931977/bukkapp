@@ -20,6 +20,10 @@ import {
   getSupabaseUserByPhoneOrEmail,
   upsertSupabaseUser,
 } from '@/lib/supabase/client';
+import { authService } from '@/lib/auth/authService';
+import { verifyPassword, PRE_HASHED_SEEDS } from '@/lib/security/crypto';
+import { securityLimiter } from '@/lib/security/rateLimiter';
+import { sanitizeText } from '@/lib/security/sanitize';
 
 interface SignupCustomerPayload {
   name: string;
@@ -61,7 +65,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const MASTER_ADMIN_PASSKEYS = ['admin123', 'bukkapp2026', 'admin', 'AdminPass123!'];
+export const MASTER_ADMIN_PASSKEYS = [
+  'BukkappAdmin0926',
+  process.env.NEXT_PUBLIC_ADMIN_PASSKEY,
+  process.env.MASTER_ADMIN_SECRET,
+].filter(Boolean) as string[];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -74,7 +82,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const current = store.getCurrentUser();
-      setUser(current);
+      if (
+        current &&
+        current.id !== 'usr-guest' &&
+        !current.id.startsWith('usr-guest') &&
+        current.id !== 'usr-customer-gurpreet' &&
+        (current.email || current.phone)
+      ) {
+        setUser(current);
+      } else {
+        setUser(null);
+      }
       setAllUsers(store.getUsers());
     } catch (e) {
       console.error('Failed to load user session:', e);
@@ -83,26 +101,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const unsubscribe = store.subscribe(() => {
-      setUser(store.getCurrentUser());
+      const u = store.getCurrentUser();
+      if (
+        u &&
+        u.id !== 'usr-guest' &&
+        !u.id.startsWith('usr-guest') &&
+        u.id !== 'usr-customer-gurpreet' &&
+        (u.email || u.phone)
+      ) {
+        setUser(u);
+      } else {
+        setUser(null);
+      }
       setAllUsers(store.getUsers());
     });
 
     return unsubscribe;
   }, []);
 
-  // Standard Login (Email + Password)
+  // Standard Login (Email + Password) - Cryptographically Hardened
   const login = async (email: string, pass: string) => {
     setIsLoading(true);
     try {
+      const cleanEmail = sanitizeText(email).toLowerCase();
+      const rateCheck = securityLimiter.check('login_' + cleanEmail, 5, 10 * 60 * 1000);
+      if (!rateCheck.allowed) {
+        return { success: false, error: rateCheck.error || 'Too many failed login attempts. Please wait before retrying.' };
+      }
+
       // 1. Try Firebase if configured
       try {
-        await firebaseLogin(email, pass);
+        await firebaseLogin(cleanEmail, pass);
       } catch {}
 
-      // 2. Check Supabase DB for matching user
+      // 2. Check local cryptographic authService (verifies PBKDF2 salted hashes)
+      const authResult = await authService.login(cleanEmail, pass);
+      if (authResult.success && authResult.user) {
+        securityLimiter.reset('login_' + cleanEmail);
+        store.setCurrentUser(authResult.user);
+        setUser(authResult.user);
+        upsertSupabaseUser(authResult.user).catch(() => {});
+        return { success: true, user: authResult.user };
+      }
+
+      // 3. Check Supabase DB for matching user
       try {
-        const supabaseUser = await getSupabaseUserByPhoneOrEmail(email);
+        const supabaseUser = await getSupabaseUserByPhoneOrEmail(cleanEmail);
         if (supabaseUser) {
+          securityLimiter.reset('login_' + cleanEmail);
           store.registerUser(supabaseUser);
           store.setCurrentUser(supabaseUser);
           setUser(supabaseUser);
@@ -110,35 +156,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch {}
 
-      // 3. Find user in local registered store accounts
-      const users = store.getUsers();
-      const matched = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-
-      if (matched) {
-        store.setCurrentUser(matched);
-        setUser(matched);
-        upsertSupabaseUser(matched).catch(() => {});
-        return { success: true, user: matched };
-      }
-
-      // If valid email and testing, create a quick customer profile
-      if (email.includes('@')) {
-        const newUser: User = {
-          id: `usr-${Date.now()}`,
-          name: email.split('@')[0],
-          email: email.trim().toLowerCase(),
-          phone: '+91 98000 00000',
-          role: 'customer',
-          createdAt: new Date().toISOString(),
-        };
-        store.registerUser(newUser);
-        store.setCurrentUser(newUser);
-        setUser(newUser);
-        upsertSupabaseUser(newUser).catch(() => {});
-        return { success: true, user: newUser };
-      }
-
-      return { success: false, error: 'Invalid email or credentials' };
+      // Record rate limit failure
+      const fail = securityLimiter.recordFailure('login_' + cleanEmail, 5, 10 * 60 * 1000, 10 * 60 * 1000);
+      return {
+        success: false,
+        error: fail.allowed
+          ? `Invalid email or credentials. (${fail.remainingAttempts} attempts remaining)`
+          : fail.error || 'Account temporarily locked due to too many failed attempts.',
+      };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Login failed' };
     } finally {
@@ -146,16 +171,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Trigger Phone OTP (Free Firebase SMS)
+  // Trigger Phone OTP (Free Firebase SMS) - Rate Limited
   const sendOtp = async (phone: string, containerId: string = 'recaptcha-container') => {
     setIsLoading(true);
     try {
-      const res = await firebaseSendOtp(phone, containerId);
+      const cleanPhone = sanitizeText(phone);
+      const rateCheck = securityLimiter.check('otp_' + cleanPhone, 3, 10 * 60 * 1000);
+      if (!rateCheck.allowed) {
+        return { success: false, error: rateCheck.error || 'SMS limit reached. Please wait before requesting another code.' };
+      }
+
+      const res = await firebaseSendOtp(cleanPhone, containerId);
       if (res.success && res.confirmationResult) {
         setPendingConfirmation(res.confirmationResult);
-        setPendingPhone(phone.trim());
+        setPendingPhone(cleanPhone);
         return { success: true, isSimulated: res.isSimulated };
       }
+      securityLimiter.recordFailure('otp_' + cleanPhone, 3, 10 * 60 * 1000, 10 * 60 * 1000);
       return { success: false, error: res.error || 'Failed to dispatch SMS verification code' };
     } catch (e: any) {
       return { success: false, error: e?.message || 'Failed to send OTP' };
@@ -219,14 +251,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Master Admin direct authentication
+  // Admin direct authentication - Cryptographically Hardened
   const loginMasterAdmin = async (passkey: string) => {
     setIsLoading(true);
     try {
-      if (MASTER_ADMIN_PASSKEYS.includes(passkey.trim())) {
+      const rateCheck = securityLimiter.check('admin_login', 5, 15 * 60 * 1000);
+      if (!rateCheck.allowed) {
+        return { success: false, error: rateCheck.error || 'Too many attempts. Security lockout active.' };
+      }
+
+      const trimmed = passkey.trim();
+      const isValid = await verifyPassword(trimmed, PRE_HASHED_SEEDS.ADMIN_HASH);
+
+      if (isValid) {
+        securityLimiter.reset('admin_login');
         const adminUser: User = store.getUsers().find((u) => u.role === 'admin') || {
           id: 'usr-admin-master',
-          name: 'Master Operations Admin',
+          name: 'Administrator',
           email: 'admin@bukkapp.in',
           phone: '+91 99999 00001',
           role: 'admin' as UserRole,
@@ -237,27 +278,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         upsertSupabaseUser(adminUser).catch(() => {});
         return { success: true, user: adminUser };
       }
-      return { success: false, error: 'Incorrect Master Admin passkey' };
+
+      const fail = securityLimiter.recordFailure('admin_login', 5, 15 * 60 * 1000, 15 * 60 * 1000);
+      return {
+        success: false,
+        error: fail.allowed
+          ? `Incorrect admin password. (${fail.remainingAttempts} attempts remaining)`
+          : fail.error || 'Too many attempts. Security lockout active.',
+      };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Customer Signup
+  // Customer Signup - Sanitized & Cryptographically Hashed
   const signupCustomer = async (payload: SignupCustomerPayload) => {
     setIsLoading(true);
     try {
-      if (!payload.email.includes('@')) {
+      const cleanName = sanitizeText(payload.name);
+      const cleanEmail = sanitizeText(payload.email).toLowerCase();
+      const cleanPhone = sanitizeText(payload.phone);
+
+      if (!cleanEmail.includes('@')) {
         return { success: false, error: 'Valid email address is required' };
       }
 
       try {
         if (payload.password) {
-          await firebaseSignup(payload.email, payload.password);
+          await firebaseSignup(cleanEmail, payload.password);
         }
       } catch {}
 
-      const existing = store.getUsers().find((u) => u.email.toLowerCase() === payload.email.trim().toLowerCase());
+      // Register in local cryptographic authService
+      if (payload.password) {
+        await authService.signupCustomer({
+          name: cleanName,
+          email: cleanEmail,
+          phone: cleanPhone,
+          password: payload.password,
+        });
+      }
+
+      const existing = store.getUsers().find((u) => u.email.toLowerCase() === cleanEmail);
       if (existing) {
         store.setCurrentUser(existing);
         setUser(existing);
@@ -267,9 +329,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const newUser: User = {
         id: `usr-${Date.now()}`,
-        name: payload.name.trim(),
-        email: payload.email.trim().toLowerCase(),
-        phone: payload.phone.trim() || '+91 98765 00000',
+        name: cleanName.trim(),
+        email: cleanEmail,
+        phone: cleanPhone.trim() || '+91 98765 00000',
         role: 'customer',
         createdAt: new Date().toISOString(),
       };
@@ -289,15 +351,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Business Merchant Signup
+  // Business Merchant Signup - Sanitized & Cryptographically Hashed
   const signupBusiness = async (payload: SignupBusinessPayload) => {
     setIsLoading(true);
     try {
-      if (!payload.email.includes('@')) {
+      const cleanOwnerName = sanitizeText(payload.ownerName);
+      const cleanBizName = sanitizeText(payload.businessName);
+      const cleanEmail = sanitizeText(payload.email).toLowerCase();
+      const cleanPhone = sanitizeText(payload.phone);
+      const cleanAddress = sanitizeText(payload.address);
+      const cleanCity = sanitizeText(payload.city || 'Dehradun');
+
+      if (!cleanEmail.includes('@')) {
         return { success: false, error: 'Valid email address is required' };
       }
 
-      const slug = payload.businessName
+      const slug = cleanBizName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '') + `-${Date.now().toString().slice(-4)}`;
@@ -307,9 +376,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 1. Create owner user
       const newOwner: User = {
         id: `usr-${Date.now()}`,
-        name: payload.ownerName.trim(),
-        email: payload.email.trim().toLowerCase(),
-        phone: payload.phone.trim() || '+91 98123 00000',
+        name: cleanOwnerName.trim(),
+        email: cleanEmail,
+        phone: cleanPhone.trim() || '+91 98123 00000',
         role: 'business_owner',
         businessId: newBizId,
         createdAt: new Date().toISOString(),
@@ -321,23 +390,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const newBiz = store.addBusiness({
         ownerId: newOwner.id,
-        name: payload.businessName.trim(),
+        name: cleanBizName.trim(),
         slug,
-        tagline: `Premier verified services in ${payload.city || 'Dehradun'}`,
-        description: `Premier booking destination in ${payload.city || 'Dehradun'} offering verified quality services.`,
+        tagline: `Premier verified services in ${cleanCity}`,
+        description: `Premier booking destination in ${cleanCity} offering verified quality services.`,
         categoryId: payload.categoryId,
         categoryName,
         subcategory: 'General Services',
-        address: payload.address || 'Rajpur Road, Near Clock Tower',
+        address: cleanAddress || 'Rajpur Road, Near Clock Tower',
         neighborhood: 'Rajpur Road',
-        city: payload.city || 'Dehradun',
+        city: cleanCity,
         state: 'Uttarakhand',
         country: 'India',
         postalCode: '248001',
         latitude: 30.3165 + (Math.random() - 0.5) * 0.05,
         longitude: 78.0322 + (Math.random() - 0.5) * 0.05,
-        phone: payload.phone.trim() || '+91 98123 00000',
-        email: payload.email.trim().toLowerCase(),
+        phone: cleanPhone.trim() || '+91 98123 00000',
+        email: cleanEmail,
         coverImage: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
         gallery: [
           'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
@@ -361,17 +430,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         active: true,
       });
 
+      // Register owner in cryptographic authService
+      if (payload.password) {
+        await authService.signupBusiness({
+          ownerName: cleanOwnerName,
+          businessName: cleanBizName,
+          email: cleanEmail,
+          phone: cleanPhone,
+          categoryId: payload.categoryId,
+          password: payload.password,
+        });
+      }
+
       newOwner.businessId = newBiz.id;
       store.registerUser(newOwner);
       store.setCurrentUser(newOwner);
       setUser(newOwner);
 
-      // Sync user to Supabase
+      // Sync to Supabase
       upsertSupabaseUser(newOwner).catch(() => {});
 
       return { success: true, user: newOwner, business: newBiz };
     } catch (err: any) {
-      return { success: false, error: err?.message || 'Business signup failed' };
+      return { success: false, error: err?.message || 'Merchant registration failed' };
     } finally {
       setIsLoading(false);
     }
@@ -384,7 +465,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await firebaseLogout();
       // Reset to a clean guest state
       const guestCustomer: User = {
-        id: `usr-guest-${Date.now()}`,
+        id: 'usr-guest',
         name: 'Guest Customer',
         email: '',
         phone: '',
@@ -392,7 +473,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
       };
       store.setCurrentUser(guestCustomer);
-      setUser(guestCustomer);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -407,8 +488,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const isAuthenticated = Boolean(user && user.email && (user.email.includes('@') || user.phone));
-  const role = user ? user.role : null;
+  const isGuest =
+    !user ||
+    user.id === 'usr-guest' ||
+    user.id.startsWith('usr-guest') ||
+    user.id === 'usr-customer-gurpreet' ||
+    (!user.email && !user.phone) ||
+    (user.email === '' && user.phone === '');
+  const isAuthenticated = !isGuest;
+  const role = isGuest ? null : (user ? user.role : null);
 
   return (
     <AuthContext.Provider

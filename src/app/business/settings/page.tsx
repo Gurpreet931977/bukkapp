@@ -185,7 +185,7 @@ export default function BusinessSettingsPage() {
             <p className="text-xs text-brand-secondary">
               {business?.verified
                 ? 'Your storefront is actively enjoying all verified merchant benefits.'
-                : 'Activate now to get your first 30 days completely free (₹0 charged today).'}
+                : 'Activate now to begin your 30-day trial (₹0 charged today).'}
             </p>
 
             {business?.verified ? (
@@ -205,7 +205,7 @@ export default function BusinessSettingsPage() {
                 className="text-xs font-black bg-brand-lime text-brand-black hover:bg-[#cbf000] shrink-0 gap-1.5 shadow-2xs"
               >
                 <CheckCircle2 className="w-4 h-4 text-brand-black" />
-                <span>Activate Free Trial (₹0 Today)</span>
+                <span>Activate 30-Day Trial (₹0 Today)</span>
               </Button>
             )}
           </div>

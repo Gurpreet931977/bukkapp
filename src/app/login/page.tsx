@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
+import { sanitizeText } from '@/lib/security/sanitize';
 
 function LoginFormContent() {
   const router = useRouter();
@@ -39,7 +40,6 @@ function LoginFormContent() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [isSimulated, setIsSimulated] = useState(false);
 
   // Email state
   const [email, setEmail] = useState('');
@@ -50,23 +50,6 @@ function LoginFormContent() {
 
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // 1-Click test credentials helper
-  const handleQuickFill = (type: 'customer' | 'merchant' | 'admin') => {
-    setErrorMessage('');
-    if (type === 'customer') {
-      setActiveTab('phone');
-      setPhoneNumber('9876543210');
-      setOtpCode('123456');
-    } else if (type === 'merchant') {
-      setActiveTab('email');
-      setEmail('arjun@smilestudio.in');
-      setPassword('merchant123');
-    } else if (type === 'admin') {
-      setActiveTab('admin');
-      setAdminPasskey('admin123');
-    }
-  };
 
   // 1. Phone OTP - Step 1: Send SMS
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -84,8 +67,7 @@ function LoginFormContent() {
       const res = await sendOtp(phoneNumber);
       if (res.success) {
         setOtpSent(true);
-        setIsSimulated(Boolean(res.isSimulated));
-        showToast('OTP Sent', 'success', res.isSimulated ? 'Test OTP is 123456' : 'SMS dispatched to your mobile.');
+        showToast('OTP Sent', 'success', 'Verification code dispatched to your mobile phone.');
       } else {
         setErrorMessage(res.error || 'Failed to dispatch verification code');
       }
@@ -137,14 +119,15 @@ function LoginFormContent() {
     setErrorMessage('');
     setIsSubmitting(true);
 
-    if (!email.trim() || !email.includes('@')) {
+    const cleanEmail = sanitizeText(email).toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
       setErrorMessage('Please enter a valid email address');
       setIsSubmitting(false);
       return;
     }
 
     try {
-      const result = await login(email, password);
+      const result = await login(cleanEmail, password);
       if (result.success && result.user) {
         showToast(`Welcome back, ${result.user.name}`, 'success', 'Successfully signed in.');
 
@@ -167,28 +150,29 @@ function LoginFormContent() {
     }
   };
 
-  // 3. Admin Passkey
+  // 3. Admin Password
   const handleAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setIsSubmitting(true);
 
-    if (!adminPasskey.trim()) {
-      setErrorMessage('Please enter the Master Admin passkey');
+    const cleanPasskey = sanitizeText(adminPasskey);
+    if (!cleanPasskey) {
+      setErrorMessage('Please enter the admin password');
       setIsSubmitting(false);
       return;
     }
 
     try {
-      const result = await loginMasterAdmin(adminPasskey);
+      const result = await loginMasterAdmin(cleanPasskey);
       if (result.success && result.user) {
-        showToast('Admin Access Authorized', 'success', 'Entering Master Control Console.');
+        showToast('Admin Access Authorized', 'success', 'Entering Control Console.');
         router.push('/admin');
       } else {
-        setErrorMessage(result.error || 'Invalid admin passkey');
+        setErrorMessage(result.error || 'Invalid admin password');
       }
     } catch {
-      setErrorMessage('Failed to authenticate as Master Admin');
+      setErrorMessage('Failed to authenticate as admin');
     } finally {
       setIsSubmitting(false);
     }
@@ -206,10 +190,10 @@ function LoginFormContent() {
             <BrandLogo size="lg" />
           </div>
           <h1 className="text-2xl font-display font-black text-brand-black">
-            Sign In to <BrandText />
+            Sign In to Bukkapp
           </h1>
           <p className="text-xs text-brand-muted mt-1 font-medium">
-            Universal local bookings in Dehradun
+            Universal real-time local bookings & appointments
           </p>
         </div>
 
@@ -255,7 +239,7 @@ function LoginFormContent() {
                 : 'text-brand-muted hover:text-brand-black'
             }`}
           >
-            Master Admin
+            I am admin
           </button>
         </div>
 
@@ -286,7 +270,7 @@ function LoginFormContent() {
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       placeholder="98765 43210"
-                      className="w-full pl-12 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all tracking-wide"
+                      className="w-full pl-12 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all tracking-wide"
                     />
                   </div>
                   <p className="text-[11px] text-brand-muted mt-1.5">
@@ -302,7 +286,7 @@ function LoginFormContent() {
                   className="w-full font-bold shadow-md text-sm mt-2"
                 >
                   <Phone className="w-4 h-4 mr-2" />
-                  <span>Send Free SMS Code</span>
+                  <span>Send Verification Code</span>
                 </Button>
               </form>
             ) : (
@@ -329,14 +313,9 @@ function LoginFormContent() {
                     required
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
-                    placeholder="123456"
+                    placeholder="••••••"
                     className="w-full py-3 text-center text-lg font-black tracking-widest rounded-xl bg-neutral-50 border-2 border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden transition-all"
                   />
-                  {isSimulated && (
-                    <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2 mt-2 font-semibold text-center">
-                      💡 Test Mode Active: Enter <strong>123456</strong> to verify instantly.
-                    </p>
-                  )}
                 </div>
 
                 <Button
@@ -369,7 +348,7 @@ function LoginFormContent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                 />
               </div>
             </div>
@@ -386,7 +365,7 @@ function LoginFormContent() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                 />
               </div>
             </div>
@@ -404,7 +383,7 @@ function LoginFormContent() {
           </form>
         )}
 
-        {/* 3. Master Admin Form */}
+        {/* 3. Admin Form */}
         {activeTab === 'admin' && (
           <form onSubmit={handleAdminSubmit} className="space-y-4">
             <div className="p-3.5 rounded-xl bg-neutral-900 text-white border border-neutral-800">
@@ -413,13 +392,13 @@ function LoginFormContent() {
                 <span>Restricted Operations Console</span>
               </div>
               <p className="text-[11px] text-neutral-300 leading-relaxed">
-                Enter your administrative passkey to access marketplace oversight, moderation, and full store management.
+                Enter your administrative password to access marketplace oversight, moderation, and full store management.
               </p>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-brand-black mb-1.5">
-                Master Admin Passkey
+                Admin Password
               </label>
               <div className="relative">
                 <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-muted" />
@@ -428,8 +407,8 @@ function LoginFormContent() {
                   required
                   value={adminPasskey}
                   onChange={(e) => setAdminPasskey(e.target.value)}
-                  placeholder="Enter master passkey (e.g. admin123)"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-mono font-medium transition-all"
+                  placeholder="Enter admin password"
+                  className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-mono font-medium transition-all"
                 />
               </div>
             </div>
@@ -442,41 +421,10 @@ function LoginFormContent() {
               className="w-full font-bold bg-brand-black text-white hover:bg-neutral-800 shadow-md text-sm mt-2"
             >
               <Shield className="w-4 h-4 mr-1 text-[#C7F36B]" />
-              <span>Authorize Master Admin</span>
+              <span>Authorize Admin</span>
             </Button>
           </form>
         )}
-
-        {/* Quick Testing Helpers */}
-        <div className="mt-6 pt-5 border-t border-brand-border">
-          <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-muted mb-2.5 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-brand-lime" />
-            <span>1-Click Test Credentials</span>
-          </p>
-          <div className="grid grid-cols-3 gap-1.5">
-            <button
-              type="button"
-              onClick={() => handleQuickFill('customer')}
-              className="px-2 py-1.5 text-[10px] font-extrabold rounded-lg bg-neutral-100 hover:bg-neutral-200 text-brand-black transition-colors"
-            >
-              Customer OTP
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('merchant')}
-              className="px-2 py-1.5 text-[10px] font-extrabold rounded-lg bg-[#FAFDF4] hover:bg-[#F2FCDA] text-[#427003] border border-[#D5F58D] transition-colors"
-            >
-              Dr. Arjun (Dentist)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('admin')}
-              className="px-2 py-1.5 text-[10px] font-extrabold rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 transition-colors"
-            >
-              Master Admin
-            </button>
-          </div>
-        </div>
 
         {/* Sign Up Direct Link */}
         <div className="mt-6 text-center text-xs text-brand-muted">

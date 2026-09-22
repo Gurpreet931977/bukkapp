@@ -90,7 +90,7 @@ export default function BusinessPage() {
                 size="lg"
                 className="w-full sm:w-auto font-extrabold text-sm px-8 py-4 shadow-lg"
               >
-                <span>Register Your Business Free</span>
+                <span>Register Your Business</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -191,7 +191,7 @@ export default function BusinessPage() {
         <div className="mt-10 pt-8 border-t border-brand-border/60 text-center">
           <Link href="/signup?role=business">
             <Button variant="accent" size="lg" className="font-black px-8 py-3.5 shadow-md">
-              <span>Start Free Business Onboarding</span>
+              <span>Start Business Onboarding</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>

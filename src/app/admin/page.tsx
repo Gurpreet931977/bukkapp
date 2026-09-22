@@ -7,6 +7,7 @@ import { Business, Booking, Category, Review, User, AuditLog, BusinessStatus } f
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { useToast } from '@/components/ui/Toast';
 import { formatPrice, formatTime24to12, formatDatePretty } from '@/lib/utils';
 import {
   Shield,
@@ -24,6 +25,8 @@ import {
   Search,
   ExternalLink,
   Trash2,
+  Power,
+  RotateCcw,
 } from 'lucide-react';
 
 export default function AdminConsolePage() {
@@ -37,16 +40,21 @@ export default function AdminConsolePage() {
 
   // Filters
   const [businessStatusFilter, setBusinessStatusFilter] = useState<'all' | BusinessStatus>('all');
+  const [businessTypeFilter, setBusinessTypeFilter] = useState<'all' | 'real' | 'demo'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDemoEnabled, setIsDemoEnabled] = useState(true);
 
   // Modals
   const [selectedBizForAction, setSelectedBizForAction] = useState<Business | null>(null);
   const [isChangesModalOpen, setIsChangesModalOpen] = useState(false);
   const [changeRequestNote, setChangeRequestNote] = useState('');
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+  const [isPurgeConfirmOpen, setIsPurgeConfirmOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [newCatSlug, setNewCatSlug] = useState('');
   const [newCatDesc, setNewCatDesc] = useState('');
+
+  const { showToast } = useToast();
 
   const refreshData = () => {
     setBusinesses(store.getAllBusinessesAdmin());
@@ -55,6 +63,7 @@ export default function AdminConsolePage() {
     setReviews(store.getAllReviewsAdmin());
     setUsers(store.getUsers());
     setAuditLogs(store.getAuditLogs());
+    setIsDemoEnabled(store.isDemoBrandsEnabled());
   };
 
   useEffect(() => {
@@ -125,12 +134,49 @@ export default function AdminConsolePage() {
     refreshData();
   };
 
+  const handleToggleDemoBrands = () => {
+    const next = store.toggleDemoBrands();
+    setIsDemoEnabled(next);
+    if (next) {
+      showToast('Demo Brands Enabled', 'success', 'Pre-seeded demo brands are now visible across the customer marketplace.');
+    } else {
+      showToast('Demo Brands Hidden', 'info', 'All pre-seeded demo brands are now hidden from public customer search and categories.');
+    }
+    refreshData();
+  };
+
+  const handlePurgeDemoBrands = () => {
+    const count = store.purgeDemoBrands();
+    setIsPurgeConfirmOpen(false);
+    showToast('Demo Brands Purged', 'info', `Permanently removed ${count} demo brands from the platform.`);
+    refreshData();
+  };
+
+  const handleRestoreDemoBrands = () => {
+    const count = store.restoreDemoBrands();
+    showToast('Demo Brands Restored', 'success', `Restored ${count} default demo brands.`);
+    refreshData();
+  };
+
+  const handleDeleteSingleBusiness = (biz: Business) => {
+    if (confirm(`Are you sure you want to permanently delete "${biz.name}"?`)) {
+      store.deleteBusiness(biz.id);
+      showToast('Business Deleted', 'info', `"${biz.name}" has been removed.`);
+      refreshData();
+    }
+  };
+
   const pendingBusinesses = businesses.filter((b) => b.status === 'pending_review');
   const activeBusinesses = businesses.filter((b) => b.status === 'active');
   const todayBookings = bookings.filter((b) => b.date === new Date().toISOString().split('T')[0]);
 
+  const demoCount = businesses.filter((b) => store.isDemoBusiness(b)).length;
+  const realCount = businesses.filter((b) => !store.isDemoBusiness(b)).length;
+
   const filteredBusinesses = businesses.filter((b) => {
     if (businessStatusFilter !== 'all' && b.status !== businessStatusFilter) return false;
+    if (businessTypeFilter === 'real' && store.isDemoBusiness(b)) return false;
+    if (businessTypeFilter === 'demo' && !store.isDemoBusiness(b)) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return b.name.toLowerCase().includes(q) || b.neighborhood.toLowerCase().includes(q) || b.categoryName.toLowerCase().includes(q);
@@ -170,33 +216,36 @@ export default function AdminConsolePage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
         {/* Navigation Tabs Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-brand-border pb-3">
-          {[
-            { key: 'overview', label: 'Operations Overview', icon: Shield },
-            { key: 'businesses', label: `Businesses (${businesses.length})`, icon: Store },
-            { key: 'bookings', label: `Bookings (${bookings.length})`, icon: CalendarCheck },
-            { key: 'categories', label: `Categories (${categories.length})`, icon: Layers },
-            { key: 'reviews', label: `Reviews (${reviews.length})`, icon: MessageSquare },
-            { key: 'users', label: `Users (${users.length})`, icon: Users },
-            { key: 'audit', label: `Audit Log (${auditLogs.length})`, icon: FileText },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  isActive
-                    ? 'bg-brand-black text-white shadow-2xs'
-                    : 'bg-white border border-brand-border text-brand-secondary hover:text-brand-black hover:border-neutral-400'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-brand-lime' : 'text-neutral-400'}`} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        <div className="overflow-x-auto no-scrollbar border-b border-brand-border pb-3 scroll-smooth">
+          <div className="flex items-center gap-2 w-max">
+            {[
+              { key: 'overview', label: 'Operations Overview', icon: Shield },
+              { key: 'businesses', label: `Businesses (${businesses.length})`, icon: Store },
+              { key: 'bookings', label: `Bookings (${bookings.length})`, icon: CalendarCheck },
+              { key: 'categories', label: `Categories (${categories.length})`, icon: Layers },
+              { key: 'reviews', label: `Reviews (${reviews.length})`, icon: MessageSquare },
+              { key: 'users', label: `Users (${users.length})`, icon: Users },
+              { key: 'audit', label: `Audit Log (${auditLogs.length})`, icon: FileText },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key as any)}
+                  className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-brand-black text-white shadow-2xs'
+                      : 'bg-white border border-brand-border text-brand-secondary hover:text-brand-black hover:border-neutral-400'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-brand-lime' : 'text-neutral-400'}`} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* 1. OVERVIEW TAB */}
@@ -209,7 +258,9 @@ export default function AdminConsolePage() {
                   Total Businesses
                 </span>
                 <p className="text-3xl font-black text-brand-black">{businesses.length}</p>
-                <p className="text-xs text-brand-secondary">{activeBusinesses.length} active live in Dehradun</p>
+                <p className="text-xs text-brand-secondary">
+                  {realCount} real • {demoCount} demo ({isDemoEnabled ? 'visible' : 'hidden'})
+                </p>
               </div>
 
               <div className="p-6 rounded-2xl bg-white border border-brand-border shadow-subtle space-y-1">
@@ -328,29 +379,129 @@ export default function AdminConsolePage() {
         {/* 2. BUSINESSES TAB */}
         {activeTab === 'businesses' && (
           <div className="space-y-6">
+            {/* Demo Brands Visibility & Toggle Card */}
+            <div className={`p-5 rounded-2xl border transition-all ${
+              isDemoEnabled
+                ? 'bg-neutral-900 border-neutral-800 text-white'
+                : 'bg-amber-50/80 border-amber-200 text-brand-black'
+            }`}>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    isDemoEnabled ? 'bg-brand-lime text-brand-black font-black' : 'bg-amber-500 text-white font-black'
+                  }`}>
+                    <Store className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2.5">
+                      <h3 className={`font-extrabold text-sm ${isDemoEnabled ? 'text-white' : 'text-brand-black'}`}>
+                        Customer Marketplace Demo Brands
+                      </h3>
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                        isDemoEnabled
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-amber-200 text-amber-900 border border-amber-300'
+                      }`}>
+                        {isDemoEnabled ? 'Active & Visible' : 'Hidden from Site'}
+                      </span>
+                    </div>
+                    <p className={`text-xs mt-1 ${isDemoEnabled ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                      {isDemoEnabled
+                        ? `${demoCount} pre-seeded demo brands (Zenith, Smile Studio, etc.) are visible to customers on search and category pages.`
+                        : 'All pre-seeded demo brands are hidden from public customer search, category docks, and booking flow. Only real merchant storefronts will be visible.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+                  {/* Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={handleToggleDemoBrands}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs ${
+                      isDemoEnabled
+                        ? 'bg-neutral-800 hover:bg-neutral-700 text-brand-lime border border-neutral-700'
+                        : 'bg-brand-black hover:bg-neutral-800 text-white'
+                    }`}
+                  >
+                    <Power className={`w-3.5 h-3.5 ${isDemoEnabled ? 'text-brand-lime' : 'text-neutral-400'}`} />
+                    <span>{isDemoEnabled ? 'Hide Demo Brands' : 'Show Demo Brands'}</span>
+                  </button>
+
+                  {/* Purge / Restore Actions */}
+                  {demoCount > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsPurgeConfirmOpen(true)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-colors border ${
+                        isDemoEnabled
+                          ? 'text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border-rose-500/30'
+                          : 'text-rose-700 hover:bg-rose-100 border-rose-300'
+                      }`}
+                      title="Permanently remove demo brands from database"
+                    >
+                      Purge Demo Records
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleRestoreDemoBrands}
+                      className="px-3 py-2 rounded-xl text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/10 border border-neutral-700 transition-colors flex items-center gap-1.5"
+                      title="Restore default demo brands"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Restore Demo Brands</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-black text-brand-black tracking-tight">
                   Business Directory & Moderation
                 </h2>
-                <p className="text-xs text-brand-secondary">All registered merchant storefronts in Dehradun</p>
+                <p className="text-xs text-brand-secondary">
+                  {realCount} real merchant storefronts • {demoCount} demo brands ({isDemoEnabled ? 'shown on site' : 'hidden from site'})
+                </p>
               </div>
 
-              {/* Status Filter */}
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                {(['all', 'pending_review', 'needs_changes', 'active', 'suspended'] as const).map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setBusinessStatusFilter(st)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize whitespace-nowrap transition-all ${
-                      businessStatusFilter === st
-                        ? 'bg-brand-black text-white shadow-2xs'
-                        : 'bg-white border border-brand-border text-brand-secondary hover:text-brand-black'
-                    }`}
-                  >
-                    {st.replace('_', ' ')}
-                  </button>
-                ))}
+              {/* Status & Type Filter */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Type Filter */}
+                <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-xl border border-brand-border/60">
+                  {(['all', 'real', 'demo'] as const).map((tp) => (
+                    <button
+                      key={tp}
+                      onClick={() => setBusinessTypeFilter(tp)}
+                      className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all capitalize ${
+                        businessTypeFilter === tp
+                          ? 'bg-white text-brand-black shadow-2xs font-extrabold'
+                          : 'text-neutral-500 hover:text-brand-black'
+                      }`}
+                    >
+                      {tp === 'all' ? `All (${businesses.length})` : tp === 'real' ? `Real (${realCount})` : `Demo (${demoCount})`}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Status Filter */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                  {(['all', 'pending_review', 'needs_changes', 'active', 'suspended'] as const).map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => setBusinessStatusFilter(st)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize whitespace-nowrap transition-all ${
+                        businessStatusFilter === st
+                          ? 'bg-brand-black text-white shadow-2xs'
+                          : 'bg-white border border-brand-border text-brand-secondary hover:text-brand-black'
+                      }`}
+                    >
+                      {st.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -379,11 +530,20 @@ export default function AdminConsolePage() {
                               className="w-9 h-9 rounded-xl object-cover border border-brand-border shrink-0"
                             />
                             <div>
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <p className="font-extrabold text-brand-black">{b.name}</p>
+                                {store.isDemoBusiness(b) ? (
+                                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
+                                    DEMO
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
+                                    LIVE
+                                  </span>
+                                )}
                                 {b.verified && (
                                   <span
-                                    className="inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-brand-black text-brand-lime shadow-2xs"
+                                    className="inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-brand-black text-brand-lime shadow-2xs shrink-0"
                                     title={b.verificationPlan?.status === 'free_trial' ? '30-Day Free Trial Active' : 'Paid Subscription Active (₹450/mo)'}
                                   >
                                     <CheckCircle2 className="w-2.5 h-2.5 text-brand-lime" />
@@ -488,6 +648,14 @@ export default function AdminConsolePage() {
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
                             </Link>
+
+                            <button
+                              onClick={() => handleDeleteSingleBusiness(b)}
+                              className="p-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors"
+                              title={`Delete ${b.name}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -820,6 +988,29 @@ export default function AdminConsolePage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Purge Demo Brands Confirmation Modal */}
+      <Modal
+        isOpen={isPurgeConfirmOpen}
+        onClose={() => setIsPurgeConfirmOpen(false)}
+        title="Purge All Demo Brands?"
+        description="This will permanently delete all 13 pre-seeded demo brands from the local database."
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-brand-secondary leading-relaxed">
+            All 13 demo stores (Zenith Pickleball, Smile Studio, etc.) will be purged from the platform. You can restore them anytime using the <strong>Restore Demo Brands</strong> button.
+          </p>
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setIsPurgeConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" onClick={handlePurgeDemoBrands} className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs">
+              Confirm Purge
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
     </AuthGuard>

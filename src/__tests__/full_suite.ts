@@ -233,11 +233,22 @@ async function runTestSuite() {
   }
 }
 
+import { runAdversarialSecurityTests } from './security_adversarial';
+import { runCashfreePaymentTests } from './cashfree_payment';
+
 async function main() {
   await runTestSuite();
-  runAdversarialSecurityTests();
+  await runAdversarialSecurityTests();
+  console.log('\n====================================================');
+  console.log('BUKKAPP CASHFREE GATEWAY INTEGRATION SUITE');
+  console.log('====================================================');
+  const cfResults = await runCashfreePaymentTests();
+  console.log('\n====================================================');
+  console.log(`CASHFREE RESULTS: ${cfResults.passed} PASSED, ${cfResults.failed} FAILED`);
+  console.log('====================================================\n');
+  if (cfResults.failed > 0) {
+    process.exit(1);
+  }
 }
-
-import { runAdversarialSecurityTests } from './security_adversarial';
 
 main();

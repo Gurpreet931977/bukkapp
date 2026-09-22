@@ -160,10 +160,10 @@ function SignupFormContent() {
             <BrandLogo size="lg" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-display font-black text-brand-black">
-            Create Your <BrandText /> Account
+            Create Your Bukkapp Account
           </h1>
           <p className="text-xs sm:text-sm text-brand-muted mt-1 font-medium">
-            Join Dehradun's real-time local booking network
+            Join the real-time local booking network
           </p>
         </div>
 
@@ -253,7 +253,7 @@ function SignupFormContent() {
                   value={custName}
                   onChange={(e) => setCustName(e.target.value)}
                   placeholder="e.g. Gurpreet Singh"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                 />
               </div>
             </div>
@@ -271,7 +271,7 @@ function SignupFormContent() {
                     value={custEmail}
                     onChange={(e) => setCustEmail(e.target.value)}
                     placeholder="you@domain.com"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                   />
                 </div>
               </div>
@@ -287,7 +287,7 @@ function SignupFormContent() {
                     value={custPhone}
                     onChange={(e) => setCustPhone(e.target.value)}
                     placeholder="+91 98765 00000"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                   />
                 </div>
               </div>
@@ -304,7 +304,7 @@ function SignupFormContent() {
                   value={custPassword}
                   onChange={(e) => setCustPassword(e.target.value)}
                   placeholder="Create secure password"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                 />
               </div>
             </div>
@@ -336,7 +336,7 @@ function SignupFormContent() {
                     value={bizOwnerName}
                     onChange={(e) => setBizOwnerName(e.target.value)}
                     placeholder="e.g. Dr. Arjun Verma"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                   />
                 </div>
               </div>
@@ -353,7 +353,7 @@ function SignupFormContent() {
                     value={bizName}
                     onChange={(e) => setBizName(e.target.value)}
                     placeholder="e.g. Zenith Sports Club"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                   />
                 </div>
               </div>
@@ -369,7 +369,7 @@ function SignupFormContent() {
                   <select
                     value={bizCategory}
                     onChange={(e) => setBizCategory(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all appearance-none"
+                    className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all appearance-none"
                   >
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
@@ -392,7 +392,7 @@ function SignupFormContent() {
                     value={bizPhone}
                     onChange={(e) => setBizPhone(e.target.value)}
                     placeholder="+91 98123 00000"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                   />
                 </div>
               </div>
@@ -410,7 +410,7 @@ function SignupFormContent() {
                   value={bizEmail}
                   onChange={(e) => setBizEmail(e.target.value)}
                   placeholder="contact@yourbusiness.com"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                 />
               </div>
             </div>
@@ -427,7 +427,7 @@ function SignupFormContent() {
                     value={bizAddress}
                     onChange={(e) => setBizAddress(e.target.value)}
                     placeholder="e.g. Rajpur Road, Jakhan"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                   />
                 </div>
               </div>
@@ -440,7 +440,7 @@ function SignupFormContent() {
                   type="text"
                   value={bizCity}
                   onChange={(e) => setBizCity(e.target.value)}
-                  className="w-full px-4 py-2.5 text-sm rounded-xl bg-neutral-100 border border-brand-border text-brand-black font-semibold cursor-not-allowed"
+                  className="w-full px-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-100 border border-brand-border text-brand-black font-semibold cursor-not-allowed"
                   readOnly
                 />
               </div>
@@ -457,7 +457,7 @@ function SignupFormContent() {
                   value={bizPassword}
                   onChange={(e) => setBizPassword(e.target.value)}
                   placeholder="Create business password"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
                 />
               </div>
             </div>

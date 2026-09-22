@@ -683,7 +683,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                       <span className="tracking-tight text-brand-black font-bold">
                         {displayText}
                       </span>
-                      <span className="inline-block w-[1.5px] h-3.5 bg-brand-black ml-0.5 animate-pulse align-middle" />
+                      <span className="inline-block w-[2px] h-3.5 sm:h-4 bg-brand-black ml-1 animate-typing-cursor align-middle rounded-xs" />
                     </button>
                   );
                 })()}
@@ -742,7 +742,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                       setQuery(ROTATING_SUGGESTIONS[suggestionIndex]);
                     }
                   }}
-                  className="w-full text-sm sm:text-base text-brand-black bg-transparent outline-none focus:outline-none focus:ring-0 ring-0 font-medium z-10"
+                  className="w-full text-base text-brand-black bg-transparent outline-none focus:outline-none focus:ring-0 ring-0 font-medium z-10"
                   autoComplete="off"
                   spellCheck="false"
                 />
@@ -975,7 +975,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
             <span className="hidden sm:inline text-neutral-300">•</span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400" />
-              100% Free to Book
+              Zero Booking Fees
             </span>
             <span className="hidden sm:inline text-neutral-300">•</span>
             <span className="flex items-center gap-1.5">

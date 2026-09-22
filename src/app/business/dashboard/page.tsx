@@ -321,7 +321,7 @@ export default function BusinessDashboardPage() {
                   <>
                     Unlock the official verified trust badge, 3x search boost in {business.neighborhood}, and verified badge on your page. Only{' '}
                     <strong className="text-brand-lime font-bold">₹450/month</strong> with{' '}
-                    <strong className="text-white underline decoration-brand-lime underline-offset-2">1st month 100% free</strong> (₹0 today).
+                    <strong className="text-white underline decoration-brand-lime underline-offset-2">30-day trial included</strong> (₹0 today).
                   </>
                 )}
               </p>
@@ -333,7 +333,7 @@ export default function BusinessDashboardPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full md:w-auto text-xs font-bold bg-white/10 hover:bg-white/20 text-white border-white/20"
+                    className="w-full md:w-auto text-xs font-bold border-neutral-700 text-white hover:bg-neutral-800"
                   >
                     <span>Manage Subscription</span>
                   </Button>
@@ -349,7 +349,7 @@ export default function BusinessDashboardPage() {
                   className="w-full md:w-auto text-xs font-black bg-brand-lime text-brand-black hover:bg-[#cbf000] shadow-[0_4px_20px_rgba(218,255,0,0.35)]"
                 >
                   <CheckCircle2 className="w-4 h-4 text-brand-black" />
-                  <span>Start 30-Day Free Trial (₹0 Today)</span>
+                  <span>Start 30-Day Trial (₹0 Today)</span>
                 </Button>
               )}
             </div>

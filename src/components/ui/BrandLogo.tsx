@@ -223,17 +223,25 @@ export function BrandLogo({
  * BrandText Component for Body Copy, Headings & Inline Mentions
  */
 export function BrandText({
-  variant = 'caps',
+  variant = 'normal',
   theme = 'light',
   className = '',
 }: {
-  variant?: 'caps' | 'title' | 'lower';
+  variant?: 'normal' | 'caps' | 'title' | 'lower';
   highlightVariant?: 'pill' | 'text' | 'glow' | 'badge';
   theme?: 'light' | 'dark';
   className?: string;
 }) {
   const isDark = theme === 'dark';
   const accentColor = isDark ? 'text-brand-lime' : 'text-[#65a30d]';
+
+  if (variant === 'caps') {
+    return (
+      <span className={`font-black tracking-tight ${className}`}>
+        BUKKA<span className={accentColor}>PP</span>
+      </span>
+    );
+  }
 
   if (variant === 'title') {
     return (
@@ -245,15 +253,15 @@ export function BrandText({
 
   if (variant === 'lower') {
     return (
-      <span className={`font-black tracking-tight ${className}`}>
-        bukka<span className={accentColor}>pp</span>
+      <span className={`font-bold tracking-tight ${className}`}>
+        bukkapp
       </span>
     );
   }
 
   return (
-    <span className={`font-black tracking-tight ${className}`}>
-      BUKKA<span className={accentColor}>PP</span>
+    <span className={`font-bold tracking-tight ${className}`}>
+      Bukkapp
     </span>
   );
 }

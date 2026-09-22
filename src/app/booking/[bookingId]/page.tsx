@@ -103,10 +103,17 @@ export default function BookingConfirmationPage() {
             </div>
 
             <div className="text-left sm:text-right">
-              <span className="text-xs text-neutral-400 block">Total Due</span>
+              <span className="text-xs text-neutral-400 block">
+                {booking.paymentStatus === 'paid' ? 'Paid via Cashfree' : 'Amount Due'}
+              </span>
               <span className="font-display text-xl sm:text-2xl font-bold text-brand-lime">
                 {formatPrice(booking.servicePrice)}
               </span>
+              {booking.paymentStatus === 'paid' && (
+                <span className="block text-[10px] text-emerald-400 font-semibold tracking-wide">
+                  ✓ Verified Prepayment
+                </span>
+              )}
             </div>
           </div>
 
@@ -171,6 +178,57 @@ export default function BookingConfirmationPage() {
               </div>
             </div>
 
+            {/* Payment & Transaction Receipt Banner */}
+            <div className="p-4 rounded-2xl bg-brand-surface-alt border border-brand-border/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${
+                    booking.paymentStatus === 'paid'
+                      ? 'bg-emerald-500 text-white border-emerald-600 shadow-2xs'
+                      : 'bg-amber-50 text-amber-800 border-amber-200'
+                  }`}
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-brand-black">
+                      {booking.paymentStatus === 'paid' ? 'Payment Verified (Cashfree)' : 'Payment Due at Venue'}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                        booking.paymentStatus === 'paid'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-amber-100 text-amber-800 border border-amber-300'
+                      }`}
+                    >
+                      {booking.paymentStatus === 'paid' ? 'Prepaid Online' : 'Pay at Venue'}
+                    </span>
+                  </div>
+                  <p className="text-brand-secondary text-[11px] mt-0.5">
+                    {booking.paymentStatus === 'paid'
+                      ? `Txn ID: ${booking.transactionId || 'CF-PAID'} • Method: ${
+                          booking.paymentMethod?.replace('_', ' ').toUpperCase() || 'UPI/CARD'
+                        }`
+                      : `Amount of ${formatPrice(booking.servicePrice)} to be settled directly at the venue upon arrival`}
+                  </p>
+                </div>
+              </div>
+
+              {booking.paidAt && (
+                <div className="text-left sm:text-right text-[11px] text-brand-muted shrink-0">
+                  <span className="block text-[10px] uppercase font-bold tracking-wider">Settled on</span>
+                  <span className="font-semibold text-brand-black">
+                    {new Date(booking.paidAt).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Special notes if any */}
             {(booking.notes || booking.specialRequests) && (
               <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200 text-xs">
@@ -188,7 +246,7 @@ export default function BookingConfirmationPage() {
                 rel="noopener noreferrer"
                 className="w-full"
               >
-                <Button variant="outline" size="sm" className="w-full justify-center text-xs font-bold gap-1.5 py-3">
+                <Button variant="outline" size="sm" className="w-full justify-center text-xs font-bold gap-1.5 py-3 min-h-[44px]">
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Google Calendar</span>
                 </Button>
@@ -199,7 +257,7 @@ export default function BookingConfirmationPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => downloadICSFile(booking)}
-                className="w-full justify-center text-xs font-bold gap-1.5 py-3"
+                className="w-full justify-center text-xs font-bold gap-1.5 py-3 min-h-[44px]"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download .ICS</span>
@@ -212,7 +270,7 @@ export default function BookingConfirmationPage() {
                 rel="noopener noreferrer"
                 className="w-full"
               >
-                <Button variant="secondary" size="sm" className="w-full justify-center text-xs font-bold gap-1.5 py-3">
+                <Button variant="secondary" size="sm" className="w-full justify-center text-xs font-bold gap-1.5 py-3 min-h-[44px]">
                   <Navigation className="w-3.5 h-3.5" />
                   <span>Get Directions</span>
                 </Button>

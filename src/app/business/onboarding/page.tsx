@@ -612,7 +612,7 @@ export default function BusinessOnboardingPage() {
                         wantsVerification ? 'bg-brand-lime text-brand-black' : 'bg-brand-surface-alt text-brand-secondary'
                       }`}
                     >
-                      1st Month FREE (Then ₹450/month)
+                      30-Day Trial Included (₹450/month afterwards)
                     </span>
                   </div>
                   <p
@@ -620,7 +620,7 @@ export default function BusinessOnboardingPage() {
                       wantsVerification ? 'text-neutral-300' : 'text-brand-secondary'
                     }`}
                   >
-                    Display the official black-and-lime Verified trust badge across search and your profile. Gain 3x booking visibility in {neighborhood}. First 30 days are 100% free (₹0 today, cancel anytime in settings).
+                    Display the official Verified Merchant trust badge across search and storefront. Includes your first 30 days at ₹0 (cancel anytime in business settings).
                   </p>
                 </div>
               </div>

@@ -55,6 +55,15 @@ export const INITIAL_USERS: User[] = [
   },
 ];
 
+export const GUEST_USER: User = {
+  id: 'usr-guest',
+  name: 'Guest',
+  email: '',
+  phone: '',
+  role: 'customer',
+  createdAt: '2026-08-01T00:00:00Z',
+};
+
 export const DEMO_USERS: User[] = INITIAL_USERS;
 
 export const INITIAL_CATEGORIES: Category[] = [
@@ -301,6 +310,22 @@ const STANDARD_WEEK_SCHEDULE = [
   { dayOfWeek: 5, dayName: 'Fri', isOpen: true, openTime: '08:00', closeTime: '21:00', periods: [{ openTime: '08:00', closeTime: '21:00' }] },
   { dayOfWeek: 6, dayName: 'Sat', isOpen: true, openTime: '08:00', closeTime: '22:00', periods: [{ openTime: '08:00', closeTime: '22:00' }] },
 ];
+
+export const INITIAL_DEMO_BUSINESS_IDS = new Set<string>([
+  'biz-zenith-pickleball',
+  'biz-smile-studio',
+  'biz-the-groom-room',
+  'biz-doon-ayurveda',
+  'biz-jakhan-crossfit',
+  'biz-city-glamour',
+  'biz-quickcool-ac',
+  'biz-motogloss-detailing',
+  'biz-doon-plumb-care',
+  'biz-heritage-woodcraft',
+  'biz-royal-stitch-boutique',
+  'biz-apex-appliance-care',
+  'biz-paws-claws-spa',
+]);
 
 export const INITIAL_BUSINESSES: Business[] = [
   // 1. FLAGSHIP BUSINESS: Zenith Pickleball Club

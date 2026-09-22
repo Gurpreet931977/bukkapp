@@ -15,6 +15,11 @@ export interface CreateBookingRequest {
   specialRequests?: string;
   resourceId?: string;
   resourceName?: string;
+  paymentStatus?: 'paid_simulated' | 'simulated_success' | 'pending' | 'refunded' | 'paid' | 'failed' | 'pay_at_venue';
+  paymentMethod?: string;
+  paymentOrderId?: string;
+  transactionId?: string;
+  paidAt?: string;
   existingBookings: Booking[];
   blockedTimes?: BlockedTime[];
 }
@@ -79,7 +84,11 @@ export class BookingService {
       startTime: req.startTime,
       endTime,
       status: 'confirmed',
-      paymentStatus: 'paid_simulated',
+      paymentStatus: req.paymentStatus || 'paid_simulated',
+      paymentMethod: req.paymentMethod,
+      paymentOrderId: req.paymentOrderId,
+      transactionId: req.transactionId,
+      paidAt: req.paidAt,
       notes: req.notes?.trim() || req.specialRequests?.trim(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

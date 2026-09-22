@@ -27,6 +27,8 @@ import {
   INITIAL_NOTIFICATIONS,
   INITIAL_AUDIT_LOGS,
   DEMO_USERS,
+  GUEST_USER,
+  INITIAL_DEMO_BUSINESS_IDS,
 } from '@/lib/seed/data';
 import { BookingService, CreateBookingRequest } from '@/lib/services/bookingService';
 import { AdminService } from '@/lib/services/adminService';
@@ -34,7 +36,7 @@ import { NotificationService } from '@/lib/services/notificationService';
 import { SearchIntentParser } from '@/lib/search/intentParser';
 import { calculateDistanceKm } from '@/lib/utils';
 
-const STORAGE_KEYS = {
+export const STORAGE_KEYS = {
   BUSINESSES: 'bukkapp_businesses_v3',
   SERVICES: 'bukkapp_services_v3',
   BOOKINGS: 'bukkapp_bookings_v3',
@@ -45,8 +47,9 @@ const STORAGE_KEYS = {
   AUDIT_LOGS: 'bukkapp_audit_logs_v3',
   CATEGORIES: 'bukkapp_categories_v3',
   FAVORITES: 'bukkapp_favorites_v3',
-  CURRENT_USER: 'bukkapp_current_user_v3',
-  USERS: 'bukkapp_users_v3',
+  CURRENT_USER: 'bukkapp_current_user_v4',
+  USERS: 'bukkapp_users_v4',
+  DEMO_BRANDS_ENABLED: 'bukkapp_demo_brands_enabled_v1',
 };
 
 class DataStore {
@@ -61,7 +64,8 @@ class DataStore {
   private auditLogs: AuditLog[] = [...INITIAL_AUDIT_LOGS];
   private favorites: string[] = ['biz-zenith-pickleball', 'biz-smile-studio'];
   private users: User[] = [...DEMO_USERS];
-  private currentUser: User = DEMO_USERS[0];
+  private currentUser: User = GUEST_USER;
+  private demoBrandsEnabled: boolean = true;
   private listeners: (() => void)[] = [];
 
   // O(1) Index Caches
@@ -161,8 +165,40 @@ class DataStore {
       if (storedUsers) this.users = JSON.parse(storedUsers);
       else localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(this.users));
 
+      // Purge any legacy mock user keys
+      try {
+        localStorage.removeItem('bukkapp_current_user_v3');
+        localStorage.removeItem('bukkapp_current_user_v2');
+        localStorage.removeItem('bukkapp_current_user');
+        localStorage.removeItem('bukkapp_auth_session_v2');
+      } catch {}
+
       const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-      if (storedUser) this.currentUser = JSON.parse(storedUser);
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (
+          parsed &&
+          parsed.id &&
+          parsed.id !== 'usr-guest' &&
+          !parsed.id.startsWith('usr-guest') &&
+          parsed.id !== 'usr-customer-gurpreet' &&
+          (parsed.email || parsed.phone)
+        ) {
+          this.currentUser = parsed;
+        } else {
+          this.currentUser = GUEST_USER;
+          localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        }
+      } else {
+        this.currentUser = GUEST_USER;
+      }
+
+      const storedDemo = localStorage.getItem(STORAGE_KEYS.DEMO_BRANDS_ENABLED);
+      if (storedDemo !== null) {
+        this.demoBrandsEnabled = storedDemo === 'true';
+      } else {
+        this.demoBrandsEnabled = true;
+      }
     } catch (err) {
       console.warn('LocalStorage hydration error, using initial memory seed:', err);
     }
@@ -263,6 +299,11 @@ class DataStore {
     // For public consumers, only show active businesses
     result = result.filter((b) => b.status === 'active' && b.active);
 
+    // If demo brands are toggled off, hide demo brands from customer view
+    if (!this.demoBrandsEnabled) {
+      result = result.filter((b) => !this.isDemoBusiness(b));
+    }
+
     if (!filters) return result;
 
     let resolvedFilters = { ...filters };
@@ -333,7 +374,10 @@ class DataStore {
   }
 
   public getBusinessBySlug(slug: string): Business | undefined {
-    return this.businessBySlugCache.get(slug) || this.businesses.find((b) => b.slug === slug);
+    const biz = this.businessBySlugCache.get(slug) || this.businesses.find((b) => b.slug === slug);
+    if (!biz) return undefined;
+    if (!this.demoBrandsEnabled && this.isDemoBusiness(biz)) return undefined;
+    return biz;
   }
 
   public getBusinessById(id: string): Business | undefined {
@@ -608,6 +652,68 @@ class DataStore {
   }
 
   // ==========================================
+  // DEMO BRANDS MANAGEMENT (ADMIN TOGGLE / PURGE)
+  // ==========================================
+  public isDemoBrandsEnabled(): boolean {
+    return this.demoBrandsEnabled;
+  }
+
+  public setDemoBrandsEnabled(enabled: boolean) {
+    this.demoBrandsEnabled = enabled;
+    this.persist(STORAGE_KEYS.DEMO_BRANDS_ENABLED, enabled);
+    this.rebuildIndexes();
+    this.notify();
+  }
+
+  public toggleDemoBrands(): boolean {
+    const next = !this.demoBrandsEnabled;
+    this.setDemoBrandsEnabled(next);
+    return next;
+  }
+
+  public isDemoBusiness(b: Business): boolean {
+    return Boolean(b.isDemo || INITIAL_DEMO_BUSINESS_IDS.has(b.id));
+  }
+
+  public purgeDemoBrands(): number {
+    const countBefore = this.businesses.length;
+    this.businesses = this.businesses.filter((b) => !this.isDemoBusiness(b));
+    this.persist(STORAGE_KEYS.BUSINESSES, this.businesses);
+    this.rebuildIndexes();
+    this.notify();
+    return countBefore - this.businesses.length;
+  }
+
+  public restoreDemoBrands(): number {
+    const existingIds = new Set(this.businesses.map((b) => b.id));
+    let added = 0;
+    for (const b of INITIAL_BUSINESSES) {
+      if (!existingIds.has(b.id)) {
+        this.businesses.push({ ...b, isDemo: true });
+        added++;
+      }
+    }
+    this.demoBrandsEnabled = true;
+    this.persist(STORAGE_KEYS.DEMO_BRANDS_ENABLED, true);
+    this.persist(STORAGE_KEYS.BUSINESSES, this.businesses);
+    this.rebuildIndexes();
+    this.notify();
+    return added;
+  }
+
+  public deleteBusiness(id: string): boolean {
+    const initialLen = this.businesses.length;
+    this.businesses = this.businesses.filter((b) => b.id !== id);
+    if (this.businesses.length !== initialLen) {
+      this.persist(STORAGE_KEYS.BUSINESSES, this.businesses);
+      this.rebuildIndexes();
+      this.notify();
+      return true;
+    }
+    return false;
+  }
+
+  // ==========================================
   // SERVICES
   // ==========================================
   public getServicesByBusinessId(businessId: string): Service[] {
@@ -749,6 +855,34 @@ class DataStore {
 
   public createBooking(req: Omit<CreateBookingRequest, 'existingBookings' | 'blockedTimes'>): Booking {
     return this.createBookingAtomically(req);
+  }
+
+  public updateBookingPayment(
+    id: string,
+    payment: {
+      paymentStatus: Booking['paymentStatus'];
+      paymentMethod?: string;
+      paymentOrderId?: string;
+      transactionId?: string;
+      paidAt?: string;
+    }
+  ): Booking {
+    const idx = this.bookings.findIndex((b) => b.id === id || b.bookingReference === id || b.paymentOrderId === id);
+    if (idx === -1) throw new Error('Booking not found');
+
+    const updated: Booking = {
+      ...this.bookings[idx],
+      paymentStatus: payment.paymentStatus,
+      paymentMethod: payment.paymentMethod || this.bookings[idx].paymentMethod,
+      paymentOrderId: payment.paymentOrderId || this.bookings[idx].paymentOrderId,
+      transactionId: payment.transactionId || this.bookings[idx].transactionId,
+      paidAt: payment.paidAt || this.bookings[idx].paidAt,
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.bookings[idx] = updated;
+    this.persist(STORAGE_KEYS.BOOKINGS, this.bookings);
+    return updated;
   }
 
   public updateBookingStatus(id: string, status: BookingStatus, cancellationReason?: string): Booking {
