@@ -1,8 +1,8 @@
 'use client';
 
 // ============================================================================
-// BUKKAPP Login Portal
-// Unified authentication for Customers, Merchants, and Master Administrators
+// BUKKAPP Login Portal: Hybrid Auth System
+// Free Phone OTP (Firebase) + Supabase PostgreSQL Engine + Master Admin Bypass
 // ============================================================================
 
 import React, { useState, Suspense } from 'react';
@@ -10,15 +10,15 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useToast } from '@/components/ui/Toast';
-import { BrandLogo, BrandText } from '@/components/ui/BrandLogo';
 import { Button } from '@/components/ui/Button';
+import { BrandLogo, BrandText } from '@/components/ui/BrandLogo';
 import {
-  Mail,
   Lock,
+  Mail,
+  Shield,
   ArrowRight,
-  ShieldCheck,
-  Store,
-  User,
+  Sparkles,
+  Phone,
   KeyRound,
   CheckCircle2,
   AlertCircle,
@@ -28,15 +28,26 @@ function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect');
-  const defaultTab = searchParams.get('tab') === 'admin' ? 'admin' : 'standard';
+  const defaultTab = searchParams.get('tab') === 'admin' ? 'admin' : 'phone';
 
-  const { login, loginMasterAdmin, isLoading } = useAuth();
+  const { login, sendOtp, verifyOtp, loginMasterAdmin, isLoading } = useAuth();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'standard' | 'admin'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'phone' | 'email' | 'admin'>(defaultTab);
+
+  // Phone OTP state
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [isSimulated, setIsSimulated] = useState(false);
+
+  // Email state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // Admin state
   const [adminPasskey, setAdminPasskey] = useState('');
+
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,11 +55,11 @@ function LoginFormContent() {
   const handleQuickFill = (type: 'customer' | 'merchant' | 'admin') => {
     setErrorMessage('');
     if (type === 'customer') {
-      setActiveTab('standard');
-      setEmail('gurpreet@bukkapp.in');
-      setPassword('customer123');
+      setActiveTab('phone');
+      setPhoneNumber('9876543210');
+      setOtpCode('123456');
     } else if (type === 'merchant') {
-      setActiveTab('standard');
+      setActiveTab('email');
       setEmail('arjun@smilestudio.in');
       setPassword('merchant123');
     } else if (type === 'admin') {
@@ -57,7 +68,71 @@ function LoginFormContent() {
     }
   };
 
-  const handleStandardSubmit = async (e: React.FormEvent) => {
+  // 1. Phone OTP - Step 1: Send SMS
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    if (!phoneNumber.trim() || phoneNumber.replace(/[^0-9]/g, '').length < 10) {
+      setErrorMessage('Please enter a valid 10-digit mobile number');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const res = await sendOtp(phoneNumber);
+      if (res.success) {
+        setOtpSent(true);
+        setIsSimulated(Boolean(res.isSimulated));
+        showToast('OTP Sent', 'success', res.isSimulated ? 'Test OTP is 123456' : 'SMS dispatched to your mobile.');
+      } else {
+        setErrorMessage(res.error || 'Failed to dispatch verification code');
+      }
+    } catch {
+      setErrorMessage('An unexpected error occurred sending OTP');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 1. Phone OTP - Step 2: Verify & Log In
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    if (!otpCode.trim() || otpCode.trim().length !== 6) {
+      setErrorMessage('Please enter the 6-digit verification code');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const res = await verifyOtp(otpCode);
+      if (res.success && res.user) {
+        showToast(`Welcome, ${res.user.name}`, 'success', 'Successfully logged in with verified mobile.');
+        if (redirectUrl) {
+          router.push(redirectUrl);
+        } else if (res.user.role === 'admin') {
+          router.push('/admin');
+        } else if (res.user.role === 'business_owner') {
+          router.push('/business/dashboard');
+        } else {
+          router.push('/account');
+        }
+      } else {
+        setErrorMessage(res.error || 'Invalid OTP code');
+      }
+    } catch {
+      setErrorMessage('OTP verification failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 2. Email + Password
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setIsSubmitting(true);
@@ -92,6 +167,7 @@ function LoginFormContent() {
     }
   };
 
+  // 3. Admin Passkey
   const handleAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -120,6 +196,9 @@ function LoginFormContent() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center p-4 sm:p-6 bg-[#FAFAF8]">
+      {/* Invisible container for Firebase Phone Recaptcha */}
+      <div id="recaptcha-container"></div>
+
       <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 border-2 border-brand-border shadow-xl">
         {/* Brand Header */}
         <div className="text-center mb-6">
@@ -135,20 +214,34 @@ function LoginFormContent() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 bg-neutral-100 rounded-2xl mb-6 border border-brand-border/60">
+        <div className="grid grid-cols-3 gap-1 p-1 bg-neutral-100 rounded-2xl mb-6 border border-brand-border/60">
           <button
             type="button"
             onClick={() => {
-              setActiveTab('standard');
+              setActiveTab('phone');
               setErrorMessage('');
             }}
-            className={`py-2.5 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'standard'
+            className={`py-2 text-[11px] font-bold rounded-xl transition-all ${
+              activeTab === 'phone'
                 ? 'bg-white text-brand-black shadow-xs font-extrabold'
                 : 'text-brand-muted hover:text-brand-black'
             }`}
           >
-            User & Merchant
+            Phone OTP
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('email');
+              setErrorMessage('');
+            }}
+            className={`py-2 text-[11px] font-bold rounded-xl transition-all ${
+              activeTab === 'email'
+                ? 'bg-white text-brand-black shadow-xs font-extrabold'
+                : 'text-brand-muted hover:text-brand-black'
+            }`}
+          >
+            Email
           </button>
           <button
             type="button"
@@ -156,7 +249,7 @@ function LoginFormContent() {
               setActiveTab('admin');
               setErrorMessage('');
             }}
-            className={`py-2.5 text-xs font-bold rounded-xl transition-all ${
+            className={`py-2 text-[11px] font-bold rounded-xl transition-all ${
               activeTab === 'admin'
                 ? 'bg-brand-black text-white shadow-xs font-extrabold'
                 : 'text-brand-muted hover:text-brand-black'
@@ -174,9 +267,96 @@ function LoginFormContent() {
           </div>
         )}
 
-        {/* Standard User / Merchant Form */}
-        {activeTab === 'standard' ? (
-          <form onSubmit={handleStandardSubmit} className="space-y-4">
+        {/* 1. Phone OTP Form */}
+        {activeTab === 'phone' && (
+          <div>
+            {!otpSent ? (
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-brand-black mb-1.5">
+                    Mobile Number
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-500">
+                      +91
+                    </div>
+                    <input
+                      type="tel"
+                      required
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="98765 43210"
+                      className="w-full pl-12 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all tracking-wide"
+                    />
+                  </div>
+                  <p className="text-[11px] text-brand-muted mt-1.5">
+                    We will send a 6-digit SMS verification code to this number.
+                  </p>
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="accent"
+                  size="lg"
+                  isLoading={isSubmitting || isLoading}
+                  className="w-full font-bold shadow-md text-sm mt-2"
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  <span>Send Free SMS Code</span>
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div className="p-3 bg-neutral-50 rounded-xl border border-brand-border text-center">
+                  <p className="text-xs text-brand-muted">Verification code sent to</p>
+                  <p className="text-sm font-extrabold text-brand-black mt-0.5">+91 {phoneNumber}</p>
+                  <button
+                    type="button"
+                    onClick={() => setOtpSent(false)}
+                    className="text-[11px] text-brand-secondary underline mt-1 font-semibold"
+                  >
+                    Change Number
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-brand-black mb-1.5">
+                    Enter 6-Digit OTP
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    required
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    placeholder="123456"
+                    className="w-full py-3 text-center text-lg font-black tracking-widest rounded-xl bg-neutral-50 border-2 border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden transition-all"
+                  />
+                  {isSimulated && (
+                    <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2 mt-2 font-semibold text-center">
+                      💡 Test Mode Active: Enter <strong>123456</strong> to verify instantly.
+                    </p>
+                  )}
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="accent"
+                  size="lg"
+                  isLoading={isSubmitting || isLoading}
+                  className="w-full font-bold shadow-md text-sm mt-2"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  <span>Verify & Sign In</span>
+                </Button>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* 2. Email Form */}
+        {activeTab === 'email' && (
+          <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-brand-black mb-1.5">
                 Email Address
@@ -218,16 +398,28 @@ function LoginFormContent() {
               isLoading={isSubmitting || isLoading}
               className="w-full font-bold shadow-md text-sm mt-2"
             >
-              <span>Sign In to Account</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>Sign In</span>
+              <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </form>
-        ) : (
-          /* Master Admin Passkey Form */
+        )}
+
+        {/* 3. Master Admin Form */}
+        {activeTab === 'admin' && (
           <form onSubmit={handleAdminSubmit} className="space-y-4">
+            <div className="p-3.5 rounded-xl bg-neutral-900 text-white border border-neutral-800">
+              <div className="flex items-center gap-2 mb-1 text-xs font-bold text-[#C7F36B]">
+                <Shield className="w-4 h-4" />
+                <span>Restricted Operations Console</span>
+              </div>
+              <p className="text-[11px] text-neutral-300 leading-relaxed">
+                Enter your administrative passkey to access marketplace oversight, moderation, and full store management.
+              </p>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-brand-black mb-1.5">
-                Master Administrator Passkey
+                Master Admin Passkey
               </label>
               <div className="relative">
                 <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-muted" />
@@ -236,13 +428,10 @@ function LoginFormContent() {
                   required
                   value={adminPasskey}
                   onChange={(e) => setAdminPasskey(e.target.value)}
-                  placeholder="Enter admin passkey (e.g. admin123)"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-medium transition-all"
+                  placeholder="Enter master passkey (e.g. admin123)"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-neutral-50 border border-brand-border focus:border-brand-black focus:bg-white focus:outline-hidden font-mono font-medium transition-all"
                 />
               </div>
-              <p className="text-[11px] text-brand-muted mt-1.5">
-                Restricted to authorized system operators only.
-              </p>
             </div>
 
             <Button
@@ -250,52 +439,50 @@ function LoginFormContent() {
               variant="primary"
               size="lg"
               isLoading={isSubmitting || isLoading}
-              className="w-full font-bold shadow-md text-sm mt-2"
+              className="w-full font-bold bg-brand-black text-white hover:bg-neutral-800 shadow-md text-sm mt-2"
             >
-              <span>Unlock Admin Console</span>
-              <ArrowRight className="w-4 h-4 text-brand-lime" />
+              <Shield className="w-4 h-4 mr-1 text-[#C7F36B]" />
+              <span>Authorize Master Admin</span>
             </Button>
           </form>
         )}
 
-        {/* Quick Fill Fast Switcher for Testing */}
-        <div className="mt-6 pt-5 border-t border-brand-border/60">
-          <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-muted text-center mb-2.5">
-            Quick Fill Test Accounts
+        {/* Quick Testing Helpers */}
+        <div className="mt-6 pt-5 border-t border-brand-border">
+          <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-muted mb-2.5 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-brand-lime" />
+            <span>1-Click Test Credentials</span>
           </p>
           <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
               onClick={() => handleQuickFill('customer')}
-              className="py-1.5 px-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-brand-black text-[11px] font-bold border border-brand-border transition-all text-center truncate"
+              className="px-2 py-1.5 text-[10px] font-extrabold rounded-lg bg-neutral-100 hover:bg-neutral-200 text-brand-black transition-colors"
             >
-              Customer
+              Customer OTP
             </button>
             <button
               type="button"
               onClick={() => handleQuickFill('merchant')}
-              className="py-1.5 px-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-brand-black text-[11px] font-bold border border-brand-border transition-all text-center truncate"
+              className="px-2 py-1.5 text-[10px] font-extrabold rounded-lg bg-[#FAFDF4] hover:bg-[#F2FCDA] text-[#427003] border border-[#D5F58D] transition-colors"
             >
-              Merchant
+              Dr. Arjun (Dentist)
             </button>
             <button
               type="button"
               onClick={() => handleQuickFill('admin')}
-              className="py-1.5 px-2 rounded-lg bg-[#FAFDF4] hover:bg-[#F0FBD4] text-[#427003] text-[11px] font-extrabold border border-[#D5F58D] transition-all text-center truncate"
+              className="px-2 py-1.5 text-[10px] font-extrabold rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 transition-colors"
             >
-              Admin
+              Master Admin
             </button>
           </div>
         </div>
 
-        {/* Footer links */}
+        {/* Sign Up Direct Link */}
         <div className="mt-6 text-center text-xs text-brand-muted">
-          Don't have an account?{' '}
-          <Link
-            href={`/signup${redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`}
-            className="text-brand-black font-extrabold hover:underline"
-          >
-            Create one for free
+          Don&apos;t have an account yet?{' '}
+          <Link href="/signup" className="font-extrabold text-brand-black underline hover:text-neutral-700">
+            Create account
           </Link>
         </div>
       </div>
@@ -305,13 +492,7 @@ function LoginFormContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-[70vh] flex items-center justify-center text-xs font-bold text-brand-muted">
-          Loading authentication portal...
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="min-h-[85vh] flex items-center justify-center text-xs font-bold">Loading Login...</div>}>
       <LoginFormContent />
     </Suspense>
   );

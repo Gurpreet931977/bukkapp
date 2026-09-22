@@ -1,15 +1,25 @@
 'use client';
 
 // ============================================================================
-// BUKKAPP Authentication & Authorization Context
+// BUKKAPP Authentication & Authorization Context: Hybrid Engine
+// Supabase (PostgreSQL DB & User Ledger) + Firebase Phone OTP (Free SMS Auth)
 // Role-Based Access Control (Admin, Business Owner, Customer)
-// Integrates with local persistent store and optional Firebase backend
 // ============================================================================
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole, Business } from '@/types';
 import { store } from '@/lib/db/store';
-import { firebaseLogin, firebaseSignup, firebaseLogout } from '@/lib/firebase/authService';
+import {
+  firebaseLogin,
+  firebaseSignup,
+  firebaseLogout,
+  sendPhoneOtp as firebaseSendOtp,
+  verifyPhoneOtp as firebaseVerifyOtp,
+} from '@/lib/firebase/authService';
+import {
+  getSupabaseUserByPhoneOrEmail,
+  upsertSupabaseUser,
+} from '@/lib/supabase/client';
 
 interface SignupCustomerPayload {
   name: string;
@@ -35,6 +45,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  sendOtp: (phone: string, containerId?: string) => Promise<{ success: boolean; error?: string; isSimulated?: boolean }>;
+  verifyOtp: (
+    otpCode: string,
+    role?: UserRole,
+    name?: string
+  ) => Promise<{ success: boolean; error?: string; user?: User }>;
   signupCustomer: (payload: SignupCustomerPayload) => Promise<{ success: boolean; error?: string; user?: User }>;
   signupBusiness: (payload: SignupBusinessPayload) => Promise<{ success: boolean; error?: string; user?: User; business?: Business }>;
   loginMasterAdmin: (passkey: string) => Promise<{ success: boolean; error?: string; user?: User }>;
@@ -45,12 +61,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const MASTER_ADMIN_PASSKEYS = ['admin123', 'bukkapp2026', 'admin'];
+const MASTER_ADMIN_PASSKEYS = ['admin123', 'bukkapp2026', 'admin', 'AdminPass123!'];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [pendingConfirmation, setPendingConfirmation] = useState<any | null>(null);
+  const [pendingPhone, setPendingPhone] = useState<string>('');
 
   // Initialize session from store
   useEffect(() => {
@@ -72,28 +90,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
-  // Standard Login
+  // Standard Login (Email + Password)
   const login = async (email: string, pass: string) => {
     setIsLoading(true);
     try {
-      // 1. Try Firebase if enabled
+      // 1. Try Firebase if configured
       try {
         await firebaseLogin(email, pass);
-      } catch {
-        // Continue with local accounts if Firebase credentials not set or fails
-      }
+      } catch {}
 
-      // 2. Find user in registered store accounts
+      // 2. Check Supabase DB for matching user
+      try {
+        const supabaseUser = await getSupabaseUserByPhoneOrEmail(email);
+        if (supabaseUser) {
+          store.registerUser(supabaseUser);
+          store.setCurrentUser(supabaseUser);
+          setUser(supabaseUser);
+          return { success: true, user: supabaseUser };
+        }
+      } catch {}
+
+      // 3. Find user in local registered store accounts
       const users = store.getUsers();
       const matched = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
 
       if (matched) {
         store.setCurrentUser(matched);
         setUser(matched);
+        upsertSupabaseUser(matched).catch(() => {});
         return { success: true, user: matched };
       }
 
-      // If password is provided and email is new, create a quick customer profile
+      // If valid email and testing, create a quick customer profile
       if (email.includes('@')) {
         const newUser: User = {
           id: `usr-${Date.now()}`,
@@ -106,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         store.registerUser(newUser);
         store.setCurrentUser(newUser);
         setUser(newUser);
+        upsertSupabaseUser(newUser).catch(() => {});
         return { success: true, user: newUser };
       }
 
@@ -117,12 +146,85 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Trigger Phone OTP (Free Firebase SMS)
+  const sendOtp = async (phone: string, containerId: string = 'recaptcha-container') => {
+    setIsLoading(true);
+    try {
+      const res = await firebaseSendOtp(phone, containerId);
+      if (res.success && res.confirmationResult) {
+        setPendingConfirmation(res.confirmationResult);
+        setPendingPhone(phone.trim());
+        return { success: true, isSimulated: res.isSimulated };
+      }
+      return { success: false, error: res.error || 'Failed to dispatch SMS verification code' };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Failed to send OTP' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Verify Phone OTP & Sync with Supabase
+  const verifyOtp = async (otpCode: string, role: UserRole = 'customer', name?: string) => {
+    if (!pendingConfirmation) {
+      return { success: false, error: 'No OTP dispatch found. Please request a new code.' };
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await firebaseVerifyOtp(pendingConfirmation, otpCode);
+      if (!res.success) {
+        return { success: false, error: res.error || 'Invalid OTP code' };
+      }
+
+      const verifiedPhone = res.phoneNumber || pendingPhone;
+
+      // 1. Look up user in Supabase by Phone
+      let existingUser = await getSupabaseUserByPhoneOrEmail(verifiedPhone);
+
+      // 2. Fallback check in local store
+      if (!existingUser) {
+        existingUser = store.getUsers().find((u) => u.phone === verifiedPhone || u.phone.includes(verifiedPhone.slice(-10))) || null;
+      }
+
+      let activeUser: User;
+
+      if (existingUser) {
+        activeUser = existingUser;
+      } else {
+        // Create new user profile linked to Supabase & Firebase
+        activeUser = {
+          id: `usr-${Date.now()}`,
+          name: name?.trim() || `User ${verifiedPhone.slice(-4)}`,
+          email: `${verifiedPhone.replace(/[^0-9]/g, '')}@phone.bukkapp.in`,
+          phone: verifiedPhone,
+          role,
+          createdAt: new Date().toISOString(),
+        };
+
+        // Persist to Supabase and Store
+        await upsertSupabaseUser({ ...activeUser, firebaseUid: res.uid });
+        store.registerUser(activeUser);
+      }
+
+      store.setCurrentUser(activeUser);
+      setUser(activeUser);
+      setPendingConfirmation(null);
+
+      return { success: true, user: activeUser };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Verification failed' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Master Admin direct authentication
   const loginMasterAdmin = async (passkey: string) => {
     setIsLoading(true);
     try {
       if (MASTER_ADMIN_PASSKEYS.includes(passkey.trim())) {
-        const adminUser = store.getUsers().find((u) => u.role === 'admin') || {
+        const adminUser: User = store.getUsers().find((u) => u.role === 'admin') || {
           id: 'usr-admin-master',
           name: 'Master Operations Admin',
           email: 'admin@bukkapp.in',
@@ -132,6 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         store.setCurrentUser(adminUser);
         setUser(adminUser);
+        upsertSupabaseUser(adminUser).catch(() => {});
         return { success: true, user: adminUser };
       }
       return { success: false, error: 'Incorrect Master Admin passkey' };
@@ -152,14 +255,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (payload.password) {
           await firebaseSignup(payload.email, payload.password);
         }
-      } catch {
-        // Fallback to store registration
-      }
+      } catch {}
 
       const existing = store.getUsers().find((u) => u.email.toLowerCase() === payload.email.trim().toLowerCase());
       if (existing) {
         store.setCurrentUser(existing);
         setUser(existing);
+        upsertSupabaseUser(existing).catch(() => {});
         return { success: true, user: existing };
       }
 
@@ -175,6 +277,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       store.registerUser(newUser);
       store.setCurrentUser(newUser);
       setUser(newUser);
+
+      // Sync to Supabase
+      upsertSupabaseUser(newUser).catch(() => {});
 
       return { success: true, user: newUser };
     } catch (err: any) {
@@ -261,6 +366,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       store.setCurrentUser(newOwner);
       setUser(newOwner);
 
+      // Sync user to Supabase
+      upsertSupabaseUser(newOwner).catch(() => {});
+
       return { success: true, user: newOwner, business: newBiz };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Business signup failed' };
@@ -274,7 +382,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       await firebaseLogout();
-      // Reset to a clean guest state or customer user
+      // Reset to a clean guest state
       const guestCustomer: User = {
         id: `usr-guest-${Date.now()}`,
         name: 'Guest Customer',
@@ -299,7 +407,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const isAuthenticated = Boolean(user && user.email && user.email.includes('@'));
+  const isAuthenticated = Boolean(user && user.email && (user.email.includes('@') || user.phone));
   const role = user ? user.role : null;
 
   return (
@@ -310,6 +418,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated,
         isLoading,
         login,
+        sendOtp,
+        verifyOtp,
         signupCustomer,
         signupBusiness,
         loginMasterAdmin,
