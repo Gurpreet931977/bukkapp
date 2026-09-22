@@ -74,7 +74,7 @@ This guide lists everything you (the founder) must manually configure. All tasks
 ### Task 3.1: Purchase Your Domain Name
 - **Exact Action**: Buy `bukkapp.in` or `bukkapp.com` from a domain registrar like Namecheap, Cloudflare, or GoDaddy.
 - **Where to perform**: Domain registrar website.
-- **Cost**: ~$8–$12 / year (the only paid expense in the entire platform roadmap).
+- **Cost**: ~$8-$12 / year (the only paid expense in the entire platform roadmap).
 - **Expected Result**: Ownership of your brand domain.
 
 ### Task 3.2: Link Domain in Vercel
@@ -130,5 +130,5 @@ This guide lists everything you (the founder) must manually configure. All tasks
 | **GitHub** | Code repository | Before deployment | Free |
 | **Vercel** | Web hosting & edge network | Before deployment | Free |
 | **Supabase** | Cloud PostgreSQL database | Before deployment | Free |
-| **Domain Registrar** | `bukkapp.in` domain | Before public launch | ~$8–$12/year |
+| **Domain Registrar** | `bukkapp.in` domain | Before public launch | ~$8-$12/year |
 | **Razorpay / Stripe** | Live consumer payments | When accepting real money | 2% per txn |

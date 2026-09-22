@@ -1,32 +1,54 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+// ============================================================================
+// BUKKAPP Global Navigation Bar
+// Responsive navigation with role-based profile menu and authentication
+// ============================================================================
+
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { MapPin, Search, Menu, X, ChevronDown, Calendar, Bookmark, Store, Shield } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  MapPin,
+  Search,
+  Menu,
+  X,
+  ChevronDown,
+  Calendar,
+  Bookmark,
+  Store,
+  Shield,
+  LogOut,
+  User,
+  LogIn,
+  UserPlus,
+  Settings,
+  Layers,
+  Sparkles,
+} from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { LocationSelectorModal } from '@/components/layout/LocationSelectorModal';
-import { store } from '@/lib/db/store';
-import { DEMO_USERS } from '@/lib/seed/data';
-import { User } from '@/types';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { useToast } from '@/components/ui/Toast';
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, role, isAuthenticated, logout } = useAuth();
+  const { showToast } = useToast();
+
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('Dehradun');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User>(DEMO_USERS[0]);
 
-  useEffect(() => {
-    setCurrentUser(store.getCurrentUser());
-  }, []);
-
-  const handleSwitchUser = (user: User) => {
-    store.setCurrentUser(user);
-    setCurrentUser(user);
+  const handleLogout = async () => {
     setIsUserMenuOpen(false);
+    setIsMobileMenuOpen(false);
+    await logout();
+    showToast('Signed Out', 'info', 'You have been safely signed out.');
+    router.push('/');
   };
 
   const navLinks = [
@@ -63,8 +85,8 @@ export function Navbar() {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className={`text-xs sm:text-sm font-semibold transition-colors hover:text-brand-black ${
-                    isActive ? 'text-brand-black font-extrabold' : 'text-brand-secondary'
+                  className={`text-xs font-bold transition-colors ${
+                    isActive ? 'text-brand-black' : 'text-neutral-600 hover:text-brand-black'
                   }`}
                 >
                   {link.label}
@@ -73,121 +95,198 @@ export function Navbar() {
             })}
           </nav>
 
-          {/* RIGHT: CTAs & User Menu */}
-          <div className="flex items-center gap-3">
-            {/* List Your Business Button (Highlighted in Brand Lime) */}
-            <Link href="/business/onboarding" className="hidden sm:inline-flex">
-              <Button
-                variant="accent"
-                size="sm"
-                className="font-extrabold text-xs px-4 py-2 rounded-full border border-brand-black/15 hover:border-brand-black shadow-xs hover:shadow-lime transition-all duration-200 gap-1.5 btn-press"
-              >
-                <Store className="w-3.5 h-3.5 text-brand-black" />
-                <span>List your business</span>
-              </Button>
+          {/* RIGHT: Actions & Authentication */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Search Quick Action */}
+            <Link
+              href="/search"
+              className="p-2 sm:px-3 sm:py-1.5 rounded-full text-brand-black hover:bg-brand-surface-alt border border-transparent hover:border-brand-border transition-all flex items-center gap-2 text-xs font-bold"
+              aria-label="Search services"
+            >
+              <Search className="w-4 h-4 text-neutral-700" />
+              <span className="hidden sm:inline">Search</span>
             </Link>
 
-            {/* Direct Quick Search on Mobile / Tablet */}
-            <Link href="/search" className="lg:hidden p-2 rounded-full hover:bg-brand-surface-alt text-brand-black" aria-label="Search">
-              <Search className="w-5 h-5" />
-            </Link>
-
-            {/* User Account / Role Switcher Menu */}
-            <div className="relative">
-              <button
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-2 p-1.5 pl-2 rounded-full bg-white hover:bg-brand-surface-alt border border-brand-border transition-all text-xs font-medium text-brand-black shadow-2xs"
-                aria-label="Account menu"
-              >
-                <div className="w-6 h-6 rounded-full bg-brand-black text-white flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
-                  {currentUser.avatar ? (
-                    <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
-                  ) : (
-                    currentUser.name.charAt(0)
-                  )}
-                </div>
-                <span className="hidden md:inline-block max-w-[100px] truncate font-bold text-xs">
-                  {currentUser.name.split(' ')[0]}
+            {/* Merchant Portal shortcut */}
+            {role !== 'business_owner' && role !== 'admin' && (
+              <Link href="/business" className="hidden sm:block">
+                <span className="text-xs font-bold text-neutral-600 hover:text-brand-black px-2 py-1 transition-colors">
+                  For Business
                 </span>
-                <ChevronDown className="w-3 h-3 text-neutral-500 mr-1" />
-              </button>
+              </Link>
+            )}
 
-              {/* Dropdown Menu */}
-              {isUserMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-30" onClick={() => setIsUserMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-modal border border-brand-border py-2 z-40 animate-slide-down">
-                    {/* User Header */}
-                    <div className="px-4 py-2.5 border-b border-brand-border/60">
-                      <p className="text-[10px] text-brand-muted uppercase tracking-wider font-bold">Active Profile</p>
-                      <p className="text-xs font-black text-brand-black truncate mt-0.5">{currentUser.name}</p>
-                      <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-lime text-brand-black">
-                        Role: {currentUser.role.replace('_', ' ')}
-                      </span>
-                    </div>
+            {/* AUTHENTICATION STATE */}
+            {isAuthenticated && user ? (
+              /* Logged In User Avatar & Dropdown */
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 p-1 pl-1.5 rounded-full bg-white hover:bg-brand-surface-alt border border-brand-border transition-all shadow-2xs focus:outline-hidden"
+                  aria-label="User profile menu"
+                >
+                  <div className="w-7 h-7 rounded-full bg-brand-black text-white font-extrabold text-[11px] flex items-center justify-center">
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      user.name.slice(0, 1).toUpperCase()
+                    )}
+                  </div>
+                  <span className="text-xs font-bold text-brand-black hidden sm:inline max-w-[100px] truncate">
+                    {user.name.split(' ')[0]}
+                  </span>
+                  <ChevronDown className="w-3 h-3 text-neutral-500 mr-1" />
+                </button>
 
-                    {/* Navigation Items */}
-                    <div className="py-1">
-                      <Link
-                        href="/account"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-brand-black hover:bg-brand-surface-alt transition-colors"
-                      >
-                        <Calendar className="w-4 h-4 text-brand-secondary" />
-                        <span>My Bookings</span>
-                      </Link>
-                      <Link
-                        href="/account/favorites"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-brand-black hover:bg-brand-surface-alt transition-colors"
-                      >
-                        <Bookmark className="w-4 h-4 text-brand-secondary" />
-                        <span>Saved Businesses</span>
-                      </Link>
-                      <Link
-                        href="/business/dashboard"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-brand-black hover:bg-brand-surface-alt transition-colors"
-                      >
-                        <Store className="w-4 h-4 text-brand-secondary" />
-                        <span>Business Dashboard</span>
-                      </Link>
-                      <Link
-                        href="/admin"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-brand-black hover:bg-brand-surface-alt transition-colors"
-                      >
-                        <Shield className="w-4 h-4 text-brand-secondary" />
-                        <span>Admin Portal</span>
-                      </Link>
-                    </div>
+                {/* Dropdown Menu */}
+                {isUserMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setIsUserMenuOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-modal border border-brand-border py-2 z-40 animate-slide-down">
+                      {/* User Header */}
+                      <div className="px-4 py-2.5 border-b border-brand-border/60">
+                        <p className="text-[10px] text-brand-muted uppercase tracking-wider font-bold">
+                          Signed In As
+                        </p>
+                        <p className="text-xs font-black text-brand-black truncate mt-0.5">
+                          {user.name}
+                        </p>
+                        <p className="text-[11px] text-brand-muted truncate">{user.email}</p>
+                        <span
+                          className={`inline-block mt-1.5 text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                            role === 'admin'
+                              ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                              : role === 'business_owner'
+                              ? 'bg-[#FAFDF4] text-[#427003] border border-[#D5F58D]'
+                              : 'bg-neutral-100 text-neutral-800 border border-neutral-200'
+                          }`}
+                        >
+                          {role === 'admin'
+                            ? 'Master Admin'
+                            : role === 'business_owner'
+                            ? 'Verified Merchant'
+                            : 'Customer'}
+                        </span>
+                      </div>
 
-                    {/* Switch Persona */}
-                    <div className="border-t border-brand-border/60 pt-2 px-3 pb-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-brand-muted px-1 mb-1.5">
-                        Switch Persona (Prototype)
-                      </p>
-                      <div className="space-y-1">
-                        {DEMO_USERS.map((u) => (
-                          <button
-                            key={u.id}
-                            onClick={() => handleSwitchUser(u)}
-                            className={`w-full text-left px-2 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors ${
-                              currentUser.id === u.id
-                                ? 'bg-brand-surface-alt font-bold text-brand-black'
-                                : 'hover:bg-brand-surface-alt text-brand-secondary'
-                            }`}
+                      {/* Navigation Items by Role */}
+                      <div className="py-1">
+                        {/* Admin Exclusive Links */}
+                        {role === 'admin' && (
+                          <>
+                            <Link
+                              href="/admin"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-brand-black hover:bg-brand-surface-alt transition-colors"
+                            >
+                              <Shield className="w-4 h-4 text-purple-600" />
+                              <span>Admin Console</span>
+                            </Link>
+                            <Link
+                              href="/admin?tab=businesses"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-brand-black hover:bg-brand-surface-alt transition-colors"
+                            >
+                              <Store className="w-4 h-4 text-neutral-600" />
+                              <span>Merchant Approvals</span>
+                            </Link>
+                          </>
+                        )}
+
+                        {/* Business Owner Exclusive Links */}
+                        {(role === 'business_owner' || role === 'admin') && (
+                          <>
+                            <Link
+                              href="/business/dashboard"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-brand-black hover:bg-brand-surface-alt transition-colors"
+                            >
+                              <Store className="w-4 h-4 text-[#558B07]" />
+                              <span>Business Dashboard</span>
+                            </Link>
+                            <Link
+                              href="/business/calendar"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-brand-black hover:bg-brand-surface-alt transition-colors"
+                            >
+                              <Calendar className="w-4 h-4 text-neutral-600" />
+                              <span>Schedule & Calendar</span>
+                            </Link>
+                          </>
+                        )}
+
+                        {/* Customer Links */}
+                        <Link
+                          href="/account"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-brand-black hover:bg-brand-surface-alt transition-colors"
+                        >
+                          <Calendar className="w-4 h-4 text-neutral-600" />
+                          <span>My Bookings</span>
+                        </Link>
+                        <Link
+                          href="/account/favorites"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-brand-black hover:bg-brand-surface-alt transition-colors"
+                        >
+                          <Bookmark className="w-4 h-4 text-neutral-600" />
+                          <span>Saved Places</span>
+                        </Link>
+
+                        {/* Customer -> Merchant conversion */}
+                        {role === 'customer' && (
+                          <Link
+                            href="/business/onboarding"
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-[#558B07] hover:bg-[#FAFDF4] transition-colors border-t border-brand-border/40 mt-1 pt-1.5"
                           >
-                            <span>{u.name} ({u.role.replace('_', ' ')})</span>
-                            {currentUser.id === u.id && <span className="w-1.5 h-1.5 rounded-full bg-brand-lime" />}
-                          </button>
-                        ))}
+                            <Sparkles className="w-4 h-4 text-[#558B07]" />
+                            <span>List Your Business</span>
+                          </Link>
+                        )}
+                      </div>
+
+                      {/* Sign Out */}
+                      <div className="border-t border-brand-border/60 pt-1 px-1">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors text-left"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Sign Out</span>
+                        </button>
                       </div>
                     </div>
-                  </div>
-                </>
-              )}
-            </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              /* Unauthenticated: Sign In & Register buttons */
+              <div className="flex items-center gap-2">
+                <Link href="/login">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs font-bold px-3 py-1.5 rounded-full border-brand-border hover:border-brand-black"
+                  >
+                    <span>Sign In</span>
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button
+                    variant="accent"
+                    size="sm"
+                    className="text-xs font-extrabold px-4 py-1.5 rounded-full shadow-2xs"
+                  >
+                    <span>Get Started</span>
+                  </Button>
+                </Link>
+              </div>
+            )}
 
             {/* Mobile Menu Toggle */}
             <button
@@ -217,11 +316,11 @@ export function Navbar() {
               <span className="text-[11px] text-brand-secondary underline">Change</span>
             </button>
 
-            <div className="flex flex-col space-y-2">
+            <div className="flex flex-col space-y-1">
               <Link
                 href="/search"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2"
+                className="px-3 py-2.5 rounded-xl text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2"
               >
                 <Search className="w-4 h-4 text-neutral-500" />
                 <span>Search & Explore</span>
@@ -229,44 +328,75 @@ export function Navbar() {
               <Link
                 href="/#categories"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2"
+                className="px-3 py-2.5 rounded-xl text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2"
               >
-                <Store className="w-4 h-4 text-neutral-500" />
+                <Layers className="w-4 h-4 text-neutral-500" />
                 <span>Categories</span>
               </Link>
-              <Link
-                href="/account"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2"
-              >
-                <Calendar className="w-4 h-4 text-neutral-500" />
-                <span>My Bookings</span>
-              </Link>
-              <Link
-                href="/business/dashboard"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2"
-              >
-                <Store className="w-4 h-4 text-neutral-500" />
-                <span>Business Dashboard</span>
-              </Link>
-              <Link
-                href="/admin"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2"
-              >
-                <Shield className="w-4 h-4 text-neutral-500" />
-                <span>Admin Portal</span>
-              </Link>
+
+              {isAuthenticated && (
+                <>
+                  <Link
+                    href="/account"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-3 py-2.5 rounded-xl text-xs font-bold text-brand-black hover:bg-brand-surface-alt flex items-center gap-2"
+                  >
+                    <Calendar className="w-4 h-4 text-neutral-500" />
+                    <span>My Bookings</span>
+                  </Link>
+
+                  {(role === 'business_owner' || role === 'admin') && (
+                    <Link
+                      href="/business/dashboard"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="px-3 py-2.5 rounded-xl text-xs font-bold text-[#427003] hover:bg-[#FAFDF4] flex items-center gap-2"
+                    >
+                      <Store className="w-4 h-4 text-[#558B07]" />
+                      <span>Business Dashboard</span>
+                    </Link>
+                  )}
+
+                  {role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="px-3 py-2.5 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-50 flex items-center gap-2"
+                    >
+                      <Shield className="w-4 h-4 text-purple-600" />
+                      <span>Admin Portal</span>
+                    </Link>
+                  )}
+                </>
+              )}
             </div>
 
-            <div className="pt-2 border-t border-brand-border">
-              <Link href="/business/onboarding" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="accent" size="md" className="w-full justify-center text-xs font-extrabold gap-2 shadow-xs">
-                  <Store className="w-4 h-4 text-brand-black" />
-                  <span>List your business</span>
-                </Button>
-              </Link>
+            <div className="pt-3 border-t border-brand-border space-y-2">
+              {isAuthenticated ? (
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out ({user?.name})</span>
+                </button>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    href="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 px-4 rounded-xl border border-brand-border text-xs font-bold text-brand-black bg-neutral-50 hover:bg-neutral-100"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 px-4 rounded-xl bg-[#C7F36B] text-xs font-extrabold text-brand-black hover:bg-[#bbf054]"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         )}

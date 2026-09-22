@@ -28,7 +28,7 @@ The data models and business workflows are architected to unlock multiple revenu
    - Free Tier: Basic bookable profile + 50 monthly bookings.
    - Pro Tier (₹999/mo): Unlimited bookings, custom working schedules, WhatsApp reminders, and multi-staff calendars.
 2. **Marketplace Commission**:
-   - 2%–5% transaction fee on prepaid consumer checkout.
+   - 2%-5% transaction fee on prepaid consumer checkout.
 3. **Featured Discovery & Sponsored Spots**:
    - Top-placement in category search and "Available Today" spotlight.
 4. **Recurring Memberships**:

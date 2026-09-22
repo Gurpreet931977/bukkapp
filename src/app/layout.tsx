@@ -27,7 +27,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://bukkapp.in'),
-  title: 'BUKKAPP - Universal Local Booking Marketplace',
+  title: {
+    default: 'BUKKAPP - Universal Local Booking Marketplace',
+    template: '%s | BUKKAPP',
+  },
   description:
     'Discover trusted local businesses, see real-time availability, and book appointments in minutes. Dentists, salons, pickleball, AC repair, detailing and more in Dehradun.',
   keywords: [
@@ -40,6 +43,9 @@ export const metadata: Metadata = {
     'bukkapp',
   ],
   authors: [{ name: 'BUKKAPP Technologies' }],
+  alternates: {
+    canonical: '/',
+  },
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -57,6 +63,7 @@ export const metadata: Metadata = {
     description: 'Universal local booking marketplace with real-time availability in Dehradun.',
     type: 'website',
     url: 'https://bukkapp.in',
+    siteName: 'BUKKAPP',
     images: [
       {
         url: '/logos/primary-wordmark.png',
@@ -66,12 +73,46 @@ export const metadata: Metadata = {
       },
     ],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'BUKKAPP - Everything you need Booked.',
+    description: 'Universal local booking marketplace with real-time availability in Dehradun.',
+    images: ['/logos/primary-wordmark.png'],
+  },
 };
 
 import { ToastProvider } from '@/components/ui/Toast';
+import { AuthProvider } from '@/lib/auth/AuthContext';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { SmoothScrollProvider } from '@/components/providers/SmoothScrollProvider';
 import 'lenis/dist/lenis.css';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': 'https://bukkapp.in/#website',
+      url: 'https://bukkapp.in',
+      name: 'BUKKAPP',
+      description: 'Universal Local Booking Marketplace in Dehradun',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: 'https://bukkapp.in/search?q={search_term_string}',
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      '@type': 'Organization',
+      '@id': 'https://bukkapp.in/#organization',
+      name: 'BUKKAPP Technologies',
+      url: 'https://bukkapp.in',
+      logo: 'https://bukkapp.in/logos/primary-wordmark.png',
+    },
+  ],
+};
+
+import { Preloader } from '@/components/ui/Preloader';
 
 export default function RootLayout({
   children,
@@ -80,14 +121,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${plusJakartaSans.variable} font-sans`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="min-h-screen flex flex-col bg-[#FAFAF8] text-[#111111] font-sans antialiased">
+        <Preloader />
         <SmoothScrollProvider>
-          <ToastProvider>
-            <Navbar />
-            <div className="flex-1 pb-16 md:pb-0">{children}</div>
-            <Footer />
-            <MobileBottomNav />
-          </ToastProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <Navbar />
+              <div className="flex-1 pb-16 md:pb-0">{children}</div>
+              <Footer />
+              <MobileBottomNav />
+            </ToastProvider>
+          </AuthProvider>
         </SmoothScrollProvider>
       </body>
     </html>

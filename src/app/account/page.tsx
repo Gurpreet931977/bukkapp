@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Booking, Business, Review } from '@/types';
 import { store } from '@/lib/db/store';
 import { formatPrice, formatTime24to12, formatDatePretty, buildDirectionsUrl } from '@/lib/utils';
@@ -21,8 +22,10 @@ import {
   ArrowRight,
   AlertCircle,
 } from 'lucide-react';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 
-export default function AccountPage() {
+function AccountContent() {
+  const searchParams = useSearchParams();
   const [user, setUser] = useState(store.getCurrentUser());
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [favorites, setFavorites] = useState<Business[]>([]);
@@ -35,14 +38,32 @@ export default function AccountPage() {
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState(false);
 
-  useEffect(() => {
+  const refreshData = () => {
     const currentUser = store.getCurrentUser();
     setUser(currentUser);
-    const userBookings = store.getBookingsByUser(currentUser.id);
-    setBookings(userBookings);
-
+    setBookings(store.getBookingsByUser(currentUser.id));
     setFavorites(store.getFavorites());
+  };
+
+  useEffect(() => {
+    refreshData();
+    const unsub = store.subscribe(() => refreshData());
+    return unsub;
   }, []);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'upcoming' || tabParam === 'past' || tabParam === 'favorites') {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: 'upcoming' | 'past' | 'favorites') => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', `/account?tab=${tab}`);
+    }
+  };
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -122,8 +143,8 @@ export default function AccountPage() {
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 border-b border-brand-border/80 pb-3">
           <button
-            onClick={() => setActiveTab('upcoming')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            onClick={() => handleTabChange('upcoming')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'upcoming'
                 ? 'bg-brand-black text-white shadow-xs'
                 : 'bg-white text-brand-secondary hover:text-brand-black border border-brand-border'
@@ -132,8 +153,8 @@ export default function AccountPage() {
             Upcoming Appointments ({upcomingBookings.length})
           </button>
           <button
-            onClick={() => setActiveTab('past')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            onClick={() => handleTabChange('past')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'past'
                 ? 'bg-brand-black text-white shadow-xs'
                 : 'bg-white text-brand-secondary hover:text-brand-black border border-brand-border'
@@ -142,8 +163,8 @@ export default function AccountPage() {
             Past History ({pastBookings.length})
           </button>
           <button
-            onClick={() => setActiveTab('favorites')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            onClick={() => handleTabChange('favorites')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'favorites'
                 ? 'bg-brand-black text-white shadow-xs'
                 : 'bg-white text-brand-secondary hover:text-brand-black border border-brand-border'
@@ -426,5 +447,15 @@ export default function AccountPage() {
         )}
       </Modal>
     </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen py-16 text-center text-xs text-brand-secondary font-bold">Loading Account...</div>}>
+      <AuthGuard allowedRoles={['customer', 'business_owner', 'admin']}>
+        <AccountContent />
+      </AuthGuard>
+    </Suspense>
   );
 }

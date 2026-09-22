@@ -24,7 +24,12 @@ export class SearchIntentParser {
       'health-wellness': ['dentist', 'dental', 'teeth', 'tooth', 'physio', 'physiotherapy', 'clinic', 'doctor', 'blood test', 'diagnostic', 'xray', 'x-ray'],
       'beauty-grooming': ['haircut', 'barber', 'salon', 'fade', 'beard', 'facial', 'spa', 'massage', 'nails', 'waxing', 'kerastase', 'makeup'],
       'fitness-sports': ['pickleball', 'badminton', 'gym', 'workout', 'turf', 'yoga', 'court', 'fitness', 'swimming', 'trainer'],
-      'home-services': ['ac', 'air conditioner', 'ac repair', 'plumber', 'plumbing', 'electrician', 'switchboard', 'ro', 'water filter', 'pest control', 'cleaning'],
+      'plumbing-sanitary': ['plumber', 'plumbing', 'pipe', 'leak', 'tap', 'drain', 'water tank', 'sanitary', 'faucet', 'flush', 'water motor'],
+      'furniture-carpentry': ['furniture', 'carpenter', 'carpentry', 'wood', 'sofa repair', 'sofa', 'reupholstery', 'table repair', 'chair repair', 'bed repair', 'wardrobe', 'door lock'],
+      'tailoring-boutique': ['tailor', 'tailoring', 'stitching', 'alteration', 'blouse', 'suit', 'kurta', 'dressmaker', 'pant fitting', 'hemming', 'boutique'],
+      'appliance-repair': ['washing machine', 'refrigerator', 'fridge', 'microwave', 'tv repair', 'water purifier', 'ro service', 'geyser', 'chimney'],
+      'pet-care': ['pet', 'dog', 'cat', 'vet', 'veterinary', 'dog grooming', 'pet spa', 'puppy', 'pet boarding', 'vaccination'],
+      'home-services': ['ac', 'air conditioner', 'ac repair', 'electrician', 'switchboard', 'pest control', 'deep cleaning', 'house cleaning'],
       'auto-care': ['car', 'car wash', 'detailing', 'bike', 'motorcycle', 'ceramic', 'superbike', 'enfield', 'foam wash'],
     };
 

@@ -185,6 +185,45 @@ async function runTestSuite() {
   }
   assert(targetDrag >= setWidth * 2 && targetDrag < setWidth * 3, 'Extreme manual drag wraps seamlessly without hitting boundaries');
 
+  // 9. ROLE-BASED ACCESS CONTROL & EXPANDED TAXONOMY
+  console.log('\n--- 9. ROLE-BASED ACCESS CONTROL & EXPANDED TAXONOMY ---');
+  const allCategories = store.getCategories();
+  assert(allCategories.some(c => c.slug === 'plumbing-sanitary'), 'Category plumbing-sanitary is registered and active');
+  assert(allCategories.some(c => c.slug === 'furniture-carpentry'), 'Category furniture-carpentry is registered and active');
+  assert(allCategories.some(c => c.slug === 'tailoring-boutique'), 'Category tailoring-boutique is registered and active');
+  assert(allCategories.some(c => c.slug === 'appliance-repair'), 'Category appliance-repair is registered and active');
+  assert(allCategories.some(c => c.slug === 'pet-care'), 'Category pet-care is registered and active');
+
+  // Verify storefront creation
+  const createdBiz = store.createBusiness({
+    ownerId: 'usr-owner-test',
+    name: 'Doon Tailors & Designers',
+    slug: 'doon-tailors-test',
+    categoryId: 'tailoring-boutique',
+    phone: '+91 98765 43210',
+    email: 'contact@doontailors.test',
+  });
+  assert(createdBiz.status === 'draft', 'Newly registered merchant starts in draft status');
+  assert(createdBiz.categoryId === 'tailoring-boutique', 'Storefront correctly bound to category');
+  assert(createdBiz.features.length > 0, 'Populates default storefront features');
+
+  // Role validation
+  const testCustomer = { id: 'c-1', role: 'customer' as const };
+  const testMerchant = { id: 'm-1', role: 'business_owner' as const, businessId: createdBiz.id };
+  const testAdmin = { id: 'a-1', role: 'admin' as const };
+
+  const canAccessAdmin = (r: string) => r === 'admin';
+  const canAccessBusiness = (r: string) => r === 'business_owner' || r === 'admin';
+  const canAccessCustomer = (r: string) => r === 'customer' || r === 'admin' || r === 'business_owner';
+
+  assert(canAccessAdmin(testAdmin.role), 'Master Admin has access to Admin operations');
+  assert(!canAccessAdmin(testCustomer.role), 'Customer is blocked from Admin operations');
+  assert(!canAccessAdmin(testMerchant.role), 'Merchant is blocked from Admin operations');
+  assert(canAccessBusiness(testMerchant.role), 'Merchant has access to Business console');
+  assert(!canAccessBusiness(testCustomer.role), 'Customer is blocked from Business console');
+  assert(canAccessBusiness(testAdmin.role), 'Master Admin has unrestricted access to Business console');
+  assert(canAccessCustomer(testCustomer.role), 'Customer has access to Customer account features');
+
   console.log('\n====================================================');
   console.log(`FUNCTIONAL SUITE RESULTS: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================\n');

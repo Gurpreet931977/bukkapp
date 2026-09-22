@@ -1,12 +1,5 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
 
 export default function AccountFavoritesRedirect() {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace('/account');
-  }, [router]);
-  return <div className="p-12 text-center text-xs text-neutral-400">Loading saved businesses...</div>;
+  redirect('/account?tab=favorites');
 }

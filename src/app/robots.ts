@@ -5,7 +5,16 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin', '/business/dashboard', '/business/bookings', '/business/calendar', '/business/settings'],
+      disallow: [
+        '/admin',
+        '/business/dashboard',
+        '/business/bookings',
+        '/business/calendar',
+        '/business/settings',
+        '/account',
+        '/book',
+        '/claim',
+      ],
     },
     sitemap: 'https://bukkapp.in/sitemap.xml',
   };

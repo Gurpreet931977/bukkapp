@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import 'leaflet/dist/leaflet.css';
 import { Business } from '@/types';
 import { formatPrice } from '@/lib/utils';
 
@@ -28,19 +29,10 @@ export function LeafletMap({
   useEffect(() => {
     if (typeof window === 'undefined' || !mapContainerRef.current) return;
 
-    // Dynamically load Leaflet and CSS to prevent SSR breakage
+    // Dynamically load Leaflet to prevent SSR breakage
     let isMounted = true;
 
     async function initMap() {
-      // Load Leaflet CSS if not already injected
-      if (!document.getElementById('leaflet-css')) {
-        const link = document.createElement('link');
-        link.id = 'leaflet-css';
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(link);
-      }
-
       const L = await import('leaflet');
 
       if (!isMounted || !mapContainerRef.current) return;

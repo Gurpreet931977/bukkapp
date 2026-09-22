@@ -6,6 +6,7 @@ import { store } from '@/lib/db/store';
 import { Business, Booking, Category, Review, User, AuditLog, BusinessStatus } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 import { formatPrice, formatTime24to12, formatDatePretty } from '@/lib/utils';
 import {
   Shield,
@@ -138,7 +139,8 @@ export default function AdminConsolePage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] pb-24">
+    <AuthGuard allowedRoles={['admin']}>
+      <div className="min-h-screen bg-[#FAFAF8] pb-24">
       {/* Top Admin Header */}
       <div className="bg-brand-black text-white border-b border-neutral-800 py-4 sticky top-16 z-30 shadow-subtle">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -820,5 +822,6 @@ export default function AdminConsolePage() {
         </form>
       </Modal>
     </div>
+    </AuthGuard>
   );
 }

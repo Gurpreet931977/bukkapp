@@ -28,6 +28,7 @@ import { store } from '@/lib/db/store';
 import { Business, User } from '@/types';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 
 interface BusinessLayoutProps {
   children: React.ReactNode;
@@ -115,7 +116,8 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] flex flex-col md:flex-row pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
+    <AuthGuard allowedRoles={['business_owner', 'admin']}>
+      <div className="min-h-screen bg-[#FAFAF8] flex flex-col md:flex-row pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden md:flex flex-col w-64 border-r border-brand-border bg-white sticky top-16 h-[calc(100vh-4rem)] p-4 justify-between shrink-0">
         <div className="space-y-4 overflow-y-auto no-scrollbar">
@@ -420,5 +422,6 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
         </Modal>
       )}
     </div>
+    </AuthGuard>
   );
 }

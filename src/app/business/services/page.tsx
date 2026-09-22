@@ -66,6 +66,31 @@ export default function BusinessServicesPage() {
       { name: 'Hot Towel Beard Lineup', price: 350, duration: 25 },
       { name: 'Full Grooming Spa Package', price: 999, duration: 60 },
     ],
+    'plumbing-sanitary': [
+      { name: 'Emergency Pipe Leak Repair', price: 299, duration: 45 },
+      { name: 'Tap, Mixer & Faucet Installation', price: 249, duration: 30 },
+      { name: 'Water Tank & Motor Inspection', price: 499, duration: 60 },
+    ],
+    'furniture-carpentry': [
+      { name: 'Sofa Cushion Refill & Reupholstery', price: 799, duration: 90 },
+      { name: 'Door Lock, Hinge & Latch Fitting', price: 350, duration: 45 },
+      { name: 'Dining Table Wood Polishing', price: 1299, duration: 120 },
+    ],
+    'tailoring-boutique': [
+      { name: 'Same-Day Pant & Jeans Hemming', price: 199, duration: 30 },
+      { name: 'Designer Blouse Custom Tailoring', price: 799, duration: 60 },
+      { name: 'Bespoke 2-Piece Suit Tailoring', price: 2499, duration: 90 },
+    ],
+    'appliance-repair': [
+      { name: 'Washing Machine Diagnostics', price: 299, duration: 45 },
+      { name: 'Refrigerator Cooling & Gas Refill', price: 799, duration: 60 },
+      { name: 'RO Water Purifier Filter Service', price: 499, duration: 45 },
+    ],
+    'pet-care': [
+      { name: 'Signature Dog Spa & Bath', price: 699, duration: 60 },
+      { name: 'Veterinary Wellness Checkup', price: 450, duration: 30 },
+      { name: 'Full Breed Styling & Haircut', price: 1199, duration: 90 },
+    ],
   };
 
   const handleApplyTemplate = (tmpl: { name: string; price: number; duration: number }) => {

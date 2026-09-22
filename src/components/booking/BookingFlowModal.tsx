@@ -46,7 +46,7 @@ export function BookingFlowModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Prefill logged in demo user
+  // Prefill authenticated user credentials if signed in
   useEffect(() => {
     if (isOpen) {
       const user = store.getCurrentUser();
@@ -424,7 +424,7 @@ export function BookingFlowModal({
                 <strong className="text-brand-black">{activeService?.name}</strong>
               </div>
               <div className="flex items-center justify-between text-xs pt-2 border-t border-brand-border/60">
-                <span className="font-bold text-brand-black">Total to Pay (at venue/free prototype)</span>
+                <span className="font-bold text-brand-black">Total to Pay (Pay upon arrival at venue)</span>
                 <span className="text-base font-black text-brand-black">
                   {activeService ? formatPrice(activeService.price) : ''}
                 </span>
@@ -497,7 +497,7 @@ export function BookingFlowModal({
               </div>
             </div>
 
-            {/* Prototype Guarantee Badge */}
+            {/* Instant Booking Guarantee Badge */}
             <div className="p-3 rounded-xl bg-[#FAFDF4] border border-[#D5F58D] flex items-center gap-2.5 text-xs text-brand-black">
               <ShieldCheck className="w-4 h-4 text-[#558B07] shrink-0" />
               <span>Instant slot lock with server-side validation. Zero cancellation charges.</span>

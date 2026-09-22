@@ -24,6 +24,9 @@ import {
   Compass,
   Flame,
   HeartPulse,
+  Wrench,
+  Hammer,
+  Cpu,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -44,17 +47,25 @@ const KINETIC_SERVICES: KineticService[] = [
   { name: 'Pickleball Courts', Icon: Activity },
   { name: 'Precision Fades', Icon: Scissors },
   { name: 'Dentist Clinics', Icon: Stethoscope },
+  { name: 'Doorstep Plumbers', Icon: Wrench },
+  { name: 'Furniture Repair', Icon: Hammer },
+  { name: 'Bespoke Tailors', Icon: Scissors },
+  { name: 'Appliance Repairs', Icon: Cpu },
   { name: 'Same-Day AC Repair', Icon: Wind },
-  { name: 'Ayurvedic Spas', Icon: Leaf },
+  { name: 'Pet Spa & Vets', Icon: HeartPulse },
   { name: 'Car Detailing', Icon: CarFront },
 ];
 
 const ROTATING_SUGGESTIONS = [
   'dentist tomorrow after 6',
   'pickleball court for 4 Saturday',
+  'plumber for burst pipe in Jakhan',
+  'sofa repair and reupholstery Rajpur Rd',
+  'tailor for suit alteration near Clock Tower',
+  'washing machine diagnostics Vasant Vihar',
+  'dog grooming and spa this weekend',
   'precision beard fade in Jakhan',
   'AC deep repair under 800',
-  'ayurvedic spa Rajpur Rd',
   'car detailing this weekend',
 ];
 
@@ -67,9 +78,13 @@ interface QuickPick {
 const POPULAR_QUICK_PICKS: QuickPick[] = [
   { label: 'Dentist Consultation', query: 'dentist tomorrow', Icon: Stethoscope },
   { label: 'Pickleball Court', query: 'pickleball for 4 saturday', Icon: Activity },
+  { label: 'Plumber On-Demand', query: 'plumber for pipe leak', Icon: Wrench },
+  { label: 'Sofa & Furniture Fix', query: 'furniture repair sofa', Icon: Hammer },
+  { label: 'Tailor Alteration', query: 'tailor suit alteration', Icon: Scissors },
   { label: 'Salon & Haircut', query: 'haircut jakhan', Icon: Scissors },
   { label: 'AC Service & Repair', query: 'ac repair under 800', Icon: Wind },
-  { label: 'Ayurvedic Spa', query: 'spa rajpur road', Icon: Leaf },
+  { label: 'Appliance Repair', query: 'washing machine repair', Icon: Cpu },
+  { label: 'Pet Spa & Vet', query: 'dog grooming spa', Icon: HeartPulse },
   { label: 'Car Detailing', query: 'car detailing dehradun', Icon: CarFront },
 ];
 
@@ -84,11 +99,13 @@ const CATEGORY_DOCK: CategoryDockItem[] = [
   { label: 'Pickleball', Icon: Activity, status: '4 venues', query: 'pickleball' },
   { label: 'Salons', Icon: Scissors, status: '12 open', query: 'haircut' },
   { label: 'Dentists', Icon: Stethoscope, status: 'Verified', query: 'dentist' },
+  { label: 'Plumbers', Icon: Wrench, status: '60-min', query: 'plumber' },
+  { label: 'Carpenters', Icon: Hammer, status: 'Expert', query: 'furniture repair' },
+  { label: 'Tailors', Icon: Scissors, status: 'Express', query: 'tailor' },
+  { label: 'Appliances', Icon: Cpu, status: 'Doorstep', query: 'washing machine' },
   { label: 'AC Service', Icon: Wind, status: 'Same-day', query: 'ac repair' },
+  { label: 'Pet Care', Icon: HeartPulse, status: 'Available', query: 'pet grooming' },
   { label: 'Detailing', Icon: CarFront, status: 'Top rated', query: 'detailing' },
-  { label: 'Wellness', Icon: Leaf, status: '5 spas', query: 'spa' },
-  { label: 'Fitness', Icon: Flame, status: 'Live slots', query: 'gym' },
-  { label: 'Pet Care', Icon: HeartPulse, status: 'Available', query: 'veterinary' },
 ];
 
 export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: HeroSectionProps) {

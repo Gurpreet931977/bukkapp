@@ -24,7 +24,7 @@ BUKKAPP has been comprehensively designed, tested, and optimized as a **first-cl
 | **412px × 915px** | Google Pixel 7 / Galaxy S23 | Touch-manipulation optimized, large input heights | **PASS** |
 | **430px × 932px** | iPhone 15 Pro Max | Dynamic island clearance, generous spacing, rich typography | **PASS** |
 | **768px × 1024px** | iPad / Android Tablet | 2-column discovery grid, split category view | **PASS** |
-| **1024px – 1920px** | Desktop / Ultrawide | Split-view map, full merchant sidebar, expressive hero composition | **PASS** |
+| **1024px - 1920px** | Desktop / Ultrawide | Split-view map, full merchant sidebar, expressive hero composition | **PASS** |
 
 ---
 

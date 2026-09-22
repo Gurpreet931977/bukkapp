@@ -35,17 +35,18 @@ import { SearchIntentParser } from '@/lib/search/intentParser';
 import { calculateDistanceKm } from '@/lib/utils';
 
 const STORAGE_KEYS = {
-  BUSINESSES: 'bukkapp_businesses_v2',
-  SERVICES: 'bukkapp_services_v2',
-  BOOKINGS: 'bukkapp_bookings_v2',
-  REVIEWS: 'bukkapp_reviews_v2',
-  RESOURCES: 'bukkapp_resources_v2',
-  BLOCKED_TIMES: 'bukkapp_blocked_times_v2',
-  NOTIFICATIONS: 'bukkapp_notifications_v2',
-  AUDIT_LOGS: 'bukkapp_audit_logs_v2',
-  CATEGORIES: 'bukkapp_categories_v2',
-  FAVORITES: 'bukkapp_favorites_v2',
-  CURRENT_USER: 'bukkapp_current_user_v2',
+  BUSINESSES: 'bukkapp_businesses_v3',
+  SERVICES: 'bukkapp_services_v3',
+  BOOKINGS: 'bukkapp_bookings_v3',
+  REVIEWS: 'bukkapp_reviews_v3',
+  RESOURCES: 'bukkapp_resources_v3',
+  BLOCKED_TIMES: 'bukkapp_blocked_times_v3',
+  NOTIFICATIONS: 'bukkapp_notifications_v3',
+  AUDIT_LOGS: 'bukkapp_audit_logs_v3',
+  CATEGORIES: 'bukkapp_categories_v3',
+  FAVORITES: 'bukkapp_favorites_v3',
+  CURRENT_USER: 'bukkapp_current_user_v3',
+  USERS: 'bukkapp_users_v3',
 };
 
 class DataStore {
@@ -59,6 +60,7 @@ class DataStore {
   private notifications: Notification[] = [...INITIAL_NOTIFICATIONS];
   private auditLogs: AuditLog[] = [...INITIAL_AUDIT_LOGS];
   private favorites: string[] = ['biz-zenith-pickleball', 'biz-smile-studio'];
+  private users: User[] = [...DEMO_USERS];
   private currentUser: User = DEMO_USERS[0];
   private listeners: (() => void)[] = [];
 
@@ -155,6 +157,10 @@ class DataStore {
       const storedFav = localStorage.getItem(STORAGE_KEYS.FAVORITES);
       if (storedFav) this.favorites = JSON.parse(storedFav);
 
+      const storedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
+      if (storedUsers) this.users = JSON.parse(storedUsers);
+      else localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(this.users));
+
       const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
       if (storedUser) this.currentUser = JSON.parse(storedUser);
     } catch (err) {
@@ -187,10 +193,21 @@ class DataStore {
   }
 
   // ==========================================
-  // USERS
+  // USERS & ACCOUNTS
   // ==========================================
   public getUsers(): User[] {
-    return DEMO_USERS;
+    return this.users;
+  }
+
+  public registerUser(user: User): User {
+    const existingIndex = this.users.findIndex((u) => u.id === user.id || u.email.toLowerCase() === user.email.toLowerCase());
+    if (existingIndex >= 0) {
+      this.users[existingIndex] = { ...this.users[existingIndex], ...user };
+    } else {
+      this.users.push(user);
+    }
+    this.persist(STORAGE_KEYS.USERS, this.users);
+    return user;
   }
 
   public getCurrentUser(): User {
@@ -215,6 +232,10 @@ class DataStore {
 
   public getCategoryBySlug(slug: string): Category | undefined {
     return this.categories.find((c) => c.slug === slug);
+  }
+
+  public getCategoryById(id: string): Category | undefined {
+    return this.categories.find((c) => c.id === id || c.slug === id);
   }
 
   public addCategory(cat: Omit<Category, 'id' | 'count'>): Category {
@@ -349,6 +370,68 @@ class DataStore {
     this.persist(STORAGE_KEYS.AUDIT_LOGS, this.auditLogs);
 
     return newBiz;
+  }
+
+  public createBusiness(data: {
+    ownerId: string;
+    name: string;
+    slug: string;
+    tagline?: string;
+    description?: string;
+    categoryId: string;
+    categoryName?: string;
+    subcategory?: string;
+    address?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    postalCode?: string;
+    phone?: string;
+    email?: string;
+    coverImage?: string;
+    startingPrice?: number;
+  }): Business {
+    const cat = this.getCategoryById(data.categoryId) || this.categories[0];
+    return this.addBusiness({
+      ownerId: data.ownerId,
+      name: data.name,
+      slug: data.slug,
+      tagline: data.tagline || `Premier verified service destination in ${data.city || 'Dehradun'}`,
+      description: data.description || `Quality appointments and services in ${data.city || 'Dehradun'}.`,
+      categoryId: data.categoryId,
+      categoryName: data.categoryName || cat?.name || 'General Services',
+      subcategory: data.subcategory || 'General Services',
+      address: data.address || 'Rajpur Road',
+      neighborhood: data.neighborhood || 'Rajpur Road',
+      city: data.city || 'Dehradun',
+      state: data.state || 'Uttarakhand',
+      country: data.country || 'India',
+      postalCode: data.postalCode || '248001',
+      latitude: 30.3165 + (Math.random() - 0.5) * 0.05,
+      longitude: 78.0322 + (Math.random() - 0.5) * 0.05,
+      phone: data.phone || '+91 98000 00000',
+      email: data.email || 'support@bukkapp.in',
+      coverImage: data.coverImage || 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=1200&q=80',
+      gallery: [
+        data.coverImage || 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=1200&q=80',
+      ],
+      verified: false,
+      status: 'draft',
+      startingPrice: data.startingPrice || 499,
+      features: ['Verified Listing', 'Instant Confirmation', 'Direct Appointments'],
+      schedule: [
+        { dayOfWeek: 0, dayName: 'Sun', isOpen: false, openTime: '10:00', closeTime: '18:00' },
+        { dayOfWeek: 1, dayName: 'Mon', isOpen: true, openTime: '09:00', closeTime: '20:00' },
+        { dayOfWeek: 2, dayName: 'Tue', isOpen: true, openTime: '09:00', closeTime: '20:00' },
+        { dayOfWeek: 3, dayName: 'Wed', isOpen: true, openTime: '09:00', closeTime: '20:00' },
+        { dayOfWeek: 4, dayName: 'Thu', isOpen: true, openTime: '09:00', closeTime: '20:00' },
+        { dayOfWeek: 5, dayName: 'Fri', isOpen: true, openTime: '09:00', closeTime: '20:00' },
+        { dayOfWeek: 6, dayName: 'Sat', isOpen: true, openTime: '09:00', closeTime: '20:00' },
+      ],
+      resources: [],
+      active: true,
+    });
   }
 
   public updateBusinessProfile(id: string, updates: Partial<Business>): Business {
