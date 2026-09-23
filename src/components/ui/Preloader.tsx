@@ -2,41 +2,39 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 export function Preloader() {
+  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(true);
   const [shouldRender, setShouldRender] = useState(true);
 
   useEffect(() => {
-    // Purge any legacy session suppression flag so preloader triggers on reload
-    try {
-      sessionStorage.removeItem('bukkapp_preloader_seen');
-    } catch (e) {}
-
-    // Crisp animation timing: 850ms animation + 350ms smooth fade out
+    // 1500ms full kinetic animation + 400ms smooth fade out
     const timer = setTimeout(() => {
       setIsVisible(false);
 
       setTimeout(() => {
         setShouldRender(false);
-      }, 350);
-    }, 850);
+      }, 400);
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, []);
 
-  if (!shouldRender) return null;
+  // Preloader only renders on the home page as requested
+  if (pathname !== '/' || !shouldRender) return null;
 
   return (
     <div
-      aria-hidden="true"
       onClick={() => setIsVisible(false)}
-      className={`fixed inset-0 z-100 bg-[#111111] flex flex-col items-center justify-center transition-all duration-350 cursor-pointer ${
+      style={{ zIndex: 9999999 }}
+      className={`fixed inset-0 bg-[#111111] flex flex-col items-center justify-center transition-all duration-400 select-none cursor-pointer ${
         isVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none scale-102'
       }`}
     >
       {/* Background Ambient Spotlight in Electric Chartreuse */}
-      <div className="absolute w-80 h-80 rounded-full bg-[#D0E967]/12 blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute w-80 h-80 rounded-full bg-[#D0E967]/15 blur-3xl pointer-events-none animate-pulse" />
 
       {/* SVG Motion Graphic Logo Container */}
       <div className="relative z-10 flex flex-col items-center space-y-6">
@@ -44,7 +42,7 @@ export function Preloader() {
         <div className="relative w-36 h-28 flex items-center justify-center svg-mark-wrapper">
           <svg
             viewBox="0 0 660 500"
-            className="w-full h-full drop-shadow-[0_0_24px_rgba(208,233,103,0.3)]"
+            className="w-full h-full drop-shadow-[0_0_24px_rgba(208,233,103,0.35)]"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
@@ -87,90 +85,6 @@ export function Preloader() {
           <div className="h-full bg-[#D0E967] rounded-full svg-preloader-bar shadow-[0_0_8px_rgba(208,233,103,0.7)]" />
         </div>
       </div>
-
-      <style jsx>{`
-        .svg-mark-wrapper {
-          animation: settleLogo 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-
-        .svg-highlighter-streak {
-          transform-origin: 50px 420px;
-          animation: sweepHighlighter 0.48s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .svg-checkmark-stroke {
-          stroke-dasharray: 650;
-          stroke-dashoffset: 650;
-          animation: drawCheckmark 0.58s cubic-bezier(0.65, 0, 0.35, 1) 0.16s forwards;
-        }
-
-        .svg-preloader-text {
-          animation: fadeUpText 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both;
-        }
-
-        .svg-preloader-bar {
-          animation: loadProgress 0.85s ease-in-out forwards;
-        }
-
-        @keyframes sweepHighlighter {
-          0% {
-            opacity: 0;
-            transform: scaleX(0) scaleY(0.7);
-          }
-          65% {
-            opacity: 1;
-            transform: scaleX(1.03) scaleY(1.04);
-          }
-          100% {
-            opacity: 1;
-            transform: scaleX(1) scaleY(1);
-          }
-        }
-
-        @keyframes drawCheckmark {
-          0% {
-            stroke-dashoffset: 650;
-          }
-          100% {
-            stroke-dashoffset: 0;
-          }
-        }
-
-        @keyframes settleLogo {
-          0% {
-            transform: scale(0.92);
-          }
-          72% {
-            transform: scale(0.92);
-          }
-          86% {
-            transform: scale(1.04);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-
-        @keyframes fadeUpText {
-          0% {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes loadProgress {
-          0% {
-            width: 0%;
-          }
-          100% {
-            width: 100%;
-          }
-        }
-      `}</style>
     </div>
   );
 }
