@@ -53,11 +53,16 @@ module.exports = {
         "2xl": "24px",
       },
       boxShadow: {
+        '2xs': '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+        xs: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
         subtle: "0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04)",
         card: "0 4px 20px -2px rgba(0, 0, 0, 0.05)",
         hover: "0 8px 30px -4px rgba(0, 0, 0, 0.08)",
         modal: "0 20px 40px -15px rgba(0, 0, 0, 0.15)",
         lime: "0 0 20px rgba(199, 243, 107, 0.4)",
+      },
+      backdropBlur: {
+        xs: '2px',
       },
       transitionTimingFunction: {
         editorial: "cubic-bezier(0.16, 1, 0.3, 1)",

@@ -40,13 +40,13 @@ export function LocationSelectorModal({
         },
         () => {
           setIsDetecting(false);
-          onSelectLocation('Dehradun (All Areas)');
+          onSelectLocation('Dehradun');
           onClose();
         }
       );
     } else {
       setIsDetecting(false);
-      onSelectLocation('Dehradun (All Areas)');
+      onSelectLocation('Dehradun');
       onClose();
     }
   };
@@ -92,19 +92,19 @@ export function LocationSelectorModal({
 
           {/* Search Filter Input */}
           <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search area (e.g. Rajpur, Jakhan...)"
-              className="w-full pl-8.5 pr-8 py-2 text-xs font-medium bg-neutral-50 hover:bg-white focus:bg-white border border-brand-border/80 focus:border-brand-black rounded-xl transition-all placeholder:text-neutral-400 focus:outline-none"
+              className="w-full pl-10 pr-9 py-2.5 text-xs font-medium bg-neutral-50 hover:bg-white focus:bg-white border border-brand-border/80 focus:border-brand-black rounded-xl transition-all placeholder:text-neutral-400 focus:outline-none"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-brand-black rounded-full"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-brand-black rounded-full"
                 aria-label="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
