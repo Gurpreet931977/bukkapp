@@ -70,23 +70,23 @@ export function Preloader() {
   const chimePlayedRef = useRef(false);
 
   useEffect(() => {
-    // Chime plays right as the checkmark strikes and confirms (850ms)
+    // Chime plays right as the checkmark strikes and confirms (650ms)
     const chimeTimer = setTimeout(() => {
       if (!chimePlayedRef.current) {
         chimePlayedRef.current = true;
         playBookingChime();
       }
-    }, 850);
+    }, 650);
 
-    // Smooth creative curtain-lift exit starts at 1550ms
+    // Fast, crisp curtain-lift exit starts at 1150ms
     const exitTimer = setTimeout(() => {
       setIsExiting(true);
 
-      // Unmount after curtain lift completes (700ms)
+      // Unmount cleanly after curtain lift completes (500ms)
       setTimeout(() => {
         setShouldRender(false);
-      }, 700);
-    }, 1550);
+      }, 500);
+    }, 1150);
 
     return () => {
       clearTimeout(chimeTimer);
@@ -103,7 +103,7 @@ export function Preloader() {
     setIsExiting(true);
     setTimeout(() => {
       setShouldRender(false);
-    }, 700);
+    }, 500);
   };
 
   // Preloader only renders on the home page as requested
@@ -112,30 +112,27 @@ export function Preloader() {
   return (
     <div
       onClick={handleDismiss}
-      style={{ zIndex: 9999999 }}
-      className={`fixed inset-0 bg-[#0F0F0E] flex flex-col items-center justify-center select-none cursor-pointer overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] ${
-        isExiting
-          ? '-translate-y-full rounded-b-[48px] sm:rounded-b-[64px] border-b-2 border-[#D0E967]/30 shadow-[0_25px_60px_rgba(0,0,0,0.85)]'
-          : 'translate-y-0 rounded-b-none'
-      }`}
+      style={{
+        zIndex: 9999999,
+        transform: isExiting ? 'translate3d(0, -100%, 0)' : 'translate3d(0, 0, 0)',
+        willChange: 'transform',
+      }}
+      className={`fixed inset-0 bg-[#0F0F0E] flex flex-col items-center justify-center select-none cursor-pointer overflow-hidden rounded-b-[40px] sm:rounded-b-[56px] border-b border-[#D0E967]/30 shadow-[0_20px_50px_rgba(0,0,0,0.85)] transition-transform duration-500 ease-[cubic-bezier(0.76,0,0.24,1)]`}
     >
-      {/* Background Ambient Spotlight in Electric Chartreuse */}
-      <div className="absolute w-96 h-96 rounded-full bg-[#D0E967]/15 blur-3xl pointer-events-none animate-pulse" />
+      {/* Background Ambient Spotlight in Electric Chartreuse (static for zero repaint cost) */}
+      <div className="absolute w-96 h-96 rounded-full bg-[#D0E967]/12 blur-3xl pointer-events-none" />
 
-      {/* Motion Graphic Logo & Brand Container (floats up and gently dissolves during curtain wipe) */}
+      {/* Motion Graphic Logo & Brand Container (smoothly dissolves during curtain lift) */}
       <div
-        className={`relative z-10 flex flex-col items-center space-y-6 transition-all duration-350 ease-out ${
-          isExiting ? 'opacity-0 -translate-y-8 scale-95' : 'opacity-100 translate-y-0 scale-100'
+        className={`relative z-10 flex flex-col items-center space-y-6 will-change-transform transition-all duration-300 ease-out ${
+          isExiting ? 'opacity-0 -translate-y-6 scale-95' : 'opacity-100 translate-y-0 scale-100'
         }`}
       >
         {/* Kinetic Secondary Logomark Wrapper */}
         <div className="relative w-36 h-28 flex items-center justify-center svg-mark-wrapper">
-          {/* Luminous Confirmation Shockwave Ripple */}
-          <div className="absolute w-28 h-28 rounded-full border border-[#D0E967]/50 bg-[#D0E967]/10 svg-shockwave-pulse pointer-events-none" />
-
           <svg
             viewBox="0 0 660 500"
-            className="w-full h-full drop-shadow-[0_0_26px_rgba(208,233,103,0.4)]"
+            className="w-full h-full drop-shadow-[0_0_24px_rgba(208,233,103,0.35)]"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
