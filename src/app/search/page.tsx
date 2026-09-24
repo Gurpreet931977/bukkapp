@@ -233,13 +233,13 @@ function SearchPageContent() {
               )}
             </div>
 
-            {/* Sticky Map Column */}
-            <div className="lg:col-span-5 sticky top-44">
+            {/* Sticky Map Column - prominently placed on top on mobile, right-hand on desktop */}
+            <div className="lg:col-span-5 order-first lg:order-last sticky top-36 sm:top-44 z-10">
               <LeafletMap
                 businesses={businesses}
                 selectedBusinessId={selectedBusinessId}
                 onSelectBusiness={(biz) => setSelectedBusinessId(biz.id)}
-                className="h-[600px] w-full"
+                className="h-[360px] sm:h-[460px] lg:h-[620px] w-full"
               />
             </div>
           </div>

@@ -4,140 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
-let hasActuallyPlayedChime = false;
-
-/**
- * Plays the luxury acoustic booking chime at 50% volume.
- * Uses studio-rendered /sounds/booking-chime.wav with Web Audio API synthesis fallback and gesture unlock.
- */
-function playBookingChime() {
-  if (hasActuallyPlayedChime) return;
-
-  try {
-    // 1. Primary method: HTML5 Audio with 50% volume
-    const audio = new Audio('/sounds/booking-chime.wav');
-    audio.volume = 0.50; // exactly 50% volume
-    const playPromise = audio.play();
-
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          hasActuallyPlayedChime = true;
-        })
-        .catch(() => {
-          // 2. Fallback method: Web Audio API synthesis with user-gesture unlock
-          playWebAudioChime();
-        });
-    }
-  } catch (e) {
-    playWebAudioChime();
-  }
-}
-
-/**
- * Web Audio API synthesized backup chime at 50% volume.
- */
-function playWebAudioChime() {
-  if (hasActuallyPlayedChime) return;
-
-  try {
-    const AudioContextClass =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-
-    const ctx = new AudioContextClass();
-    const triggerNotes = () => {
-      if (hasActuallyPlayedChime) return;
-      hasActuallyPlayedChime = true;
-      const now = ctx.currentTime;
-
-      // Master volume at 50% (0.50)
-      const masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(0.50, now);
-      masterGain.connect(ctx.destination);
-
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(3000, now);
-      filter.connect(masterGain);
-
-      // Acoustic chime chord
-      const tones = [
-        { freq: 587.33, delay: 0.0, peak: 0.5 },
-        { freq: 1174.66, delay: 0.07, peak: 0.8 },
-        { freq: 1479.98, delay: 0.09, peak: 0.35 },
-      ];
-
-      tones.forEach(({ freq, delay, peak }) => {
-        const start = now + delay;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, start);
-
-        gain.gain.setValueAtTime(0.001, start);
-        gain.gain.linearRampToValueAtTime(peak, start + 0.015);
-        gain.gain.setTargetAtTime(0.0001, start + 0.02, 0.25);
-
-        osc.connect(gain);
-        gain.connect(filter);
-
-        osc.start(start);
-        osc.stop(start + 1.2);
-      });
-    };
-
-    const armUnlock = () => {
-      const unlock = () => {
-        if (!hasActuallyPlayedChime) {
-          playBookingChime();
-        }
-        window.removeEventListener('pointerdown', unlock, true);
-        window.removeEventListener('keydown', unlock, true);
-        window.removeEventListener('touchstart', unlock, true);
-      };
-      window.addEventListener('pointerdown', unlock, { once: true, capture: true });
-      window.addEventListener('keydown', unlock, { once: true, capture: true });
-      window.addEventListener('touchstart', unlock, { once: true, capture: true });
-    };
-
-    if (ctx.state === 'running') {
-      triggerNotes();
-    } else {
-      ctx.resume().then(() => {
-        if (ctx.state === 'running') {
-          triggerNotes();
-        } else {
-          armUnlock();
-        }
-      }).catch(armUnlock);
-    }
-  } catch (e) {}
-}
-
 export function Preloader() {
   const pathname = usePathname();
   const [isExiting, setIsExiting] = useState(false);
   const [shouldRender, setShouldRender] = useState(true);
 
   useEffect(() => {
-    // Reset chime state on component mount for fresh reload
-    hasActuallyPlayedChime = false;
-
-    // Preload audio asset for instant 0ms latency playback
-    try {
-      const preloadAudio = new Audio('/sounds/booking-chime.wav');
-      preloadAudio.volume = 0.50;
-      preloadAudio.load();
-    } catch (e) {}
-
-    // Chime plays right as the checkmark strikes and confirms (650ms)
-    const chimeTimer = setTimeout(() => {
-      playBookingChime();
-    }, 650);
-
     // Fast, crisp curtain-lift exit starts at 1150ms
     const exitTimer = setTimeout(() => {
       setIsExiting(true);
@@ -149,16 +21,12 @@ export function Preloader() {
     }, 1150);
 
     return () => {
-      clearTimeout(chimeTimer);
       clearTimeout(exitTimer);
     };
   }, []);
 
   const handleDismiss = () => {
     if (isExiting) return;
-    if (!hasActuallyPlayedChime) {
-      playBookingChime();
-    }
     setIsExiting(true);
     setTimeout(() => {
       setShouldRender(false);

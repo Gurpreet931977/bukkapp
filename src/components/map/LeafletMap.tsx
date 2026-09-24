@@ -76,6 +76,63 @@ function createPopupContent(biz: Business): string {
   `;
 }
 
+/**
+ * Synchronizes markers and auto-bounds on the given Leaflet map instance.
+ */
+function syncMarkersToMap(
+  L: any,
+  map: any,
+  list: Business[],
+  selectedId: string | undefined,
+  markersMap: Map<string, any>,
+  onSelect?: (b: Business) => void,
+  defaultCenter: [number, number] = [30.345, 78.05],
+  defaultZoom: number = 13
+) {
+  // Remove existing markers
+  markersMap.forEach((marker) => {
+    try {
+      map.removeLayer(marker);
+    } catch (e) {}
+  });
+  markersMap.clear();
+
+  const validBusinesses = list.filter(
+    (biz) => typeof biz.latitude === 'number' && typeof biz.longitude === 'number'
+  );
+
+  validBusinesses.forEach((biz) => {
+    const isSelected = biz.id === selectedId;
+    const customIcon = createMarkerIcon(L, biz.startingPrice, isSelected);
+
+    const marker = L.marker([biz.latitude, biz.longitude], {
+      icon: customIcon,
+      zIndexOffset: isSelected ? 1000 : 0,
+    }).addTo(map);
+
+    marker.bindPopup(createPopupContent(biz), {
+      maxWidth: 260,
+      className: 'bukk-custom-popup',
+    });
+
+    marker.on('click', () => {
+      if (onSelect) onSelect(biz);
+    });
+
+    markersMap.set(biz.id, marker);
+  });
+
+  // Fit bounds or center
+  if (validBusinesses.length > 1) {
+    const bounds = L.latLngBounds(validBusinesses.map((b) => [b.latitude, b.longitude]));
+    map.fitBounds(bounds, { padding: [45, 45], maxZoom: 15 });
+  } else if (validBusinesses.length === 1) {
+    map.setView([validBusinesses[0].latitude, validBusinesses[0].longitude], defaultZoom || 14);
+  } else {
+    map.setView(defaultCenter, defaultZoom);
+  }
+}
+
 export function LeafletMap({
   businesses,
   selectedBusinessId,
@@ -92,11 +149,12 @@ export function LeafletMap({
   // 1. Initialize Map Instance and Tile Layer ONCE on mount
   useEffect(() => {
     if (typeof window === 'undefined' || !mapContainerRef.current) return;
-    let isMounted = true;
+    let isDisposed = false;
+    const timers: NodeJS.Timeout[] = [];
 
     async function initMap() {
       const L = await import('leaflet');
-      if (!isMounted || !mapContainerRef.current) return;
+      if (isDisposed || !mapContainerRef.current) return;
       LRef.current = L;
 
       // Fix default Leaflet asset path warnings
@@ -107,10 +165,17 @@ export function LeafletMap({
         shadowUrl: '',
       });
 
-      // Tear down previous instance if present
+      // Tear down previous instance if present and purge _leaflet_id to prevent "Map container is already initialized"
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        try {
+          mapInstanceRef.current.remove();
+        } catch (e) {}
         mapInstanceRef.current = null;
+      }
+
+      if (mapContainerRef.current) {
+        delete (mapContainerRef.current as any)._leaflet_id;
+        mapContainerRef.current.innerHTML = '';
       }
 
       const map = L.map(mapContainerRef.current, {
@@ -120,15 +185,48 @@ export function LeafletMap({
         zoomControl: true,
       });
 
-      // High-resolution, open CartoDB Voyager tiles (100% reliable, zero rate-limit blocks)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      if (isDisposed) {
+        try {
+          map.remove();
+        } catch (e) {}
+        return;
+      }
+
+      mapInstanceRef.current = map;
+
+      // Primary CartoDB Voyager tiles (clean, high-contrast, zero rate limits)
+      const primaryTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', {
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
         maxZoom: 19,
-      }).addTo(map);
+      });
 
-      mapInstanceRef.current = map;
+      // Reliable OpenStreetMap fallback if CartoDB experiences ad-blocker or network issues
+      let fallbackTriggered = false;
+      primaryTiles.on('tileerror', () => {
+        if (!fallbackTriggered && !isDisposed && mapInstanceRef.current) {
+          fallbackTriggered = true;
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19,
+          }).addTo(mapInstanceRef.current);
+        }
+      });
+
+      primaryTiles.addTo(map);
+
+      // Immediately synchronize markers onto the map instance
+      syncMarkersToMap(
+        L,
+        map,
+        businesses,
+        selectedBusinessId,
+        markersMapRef.current,
+        onSelectBusiness,
+        center,
+        zoom
+      );
 
       // Force size invalidation across render microtasks to eliminate grey viewport tiles
       const invalidate = () => {
@@ -138,15 +236,10 @@ export function LeafletMap({
       };
 
       invalidate();
-      const t1 = setTimeout(invalidate, 120);
-      const t2 = setTimeout(invalidate, 350);
-      const t3 = setTimeout(invalidate, 700);
-
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
+      timers.push(setTimeout(invalidate, 80));
+      timers.push(setTimeout(invalidate, 250));
+      timers.push(setTimeout(invalidate, 500));
+      timers.push(setTimeout(invalidate, 1000));
     }
 
     initMap();
@@ -163,11 +256,18 @@ export function LeafletMap({
     }
 
     return () => {
-      isMounted = false;
+      isDisposed = true;
+      timers.forEach(clearTimeout);
       resizeObserver.disconnect();
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        try {
+          mapInstanceRef.current.remove();
+        } catch (e) {}
         mapInstanceRef.current = null;
+      }
+      if (mapContainerRef.current) {
+        delete (mapContainerRef.current as any)._leaflet_id;
+        mapContainerRef.current.innerHTML = '';
       }
     };
   }, []);
@@ -178,46 +278,17 @@ export function LeafletMap({
     const L = LRef.current;
     const map = mapInstanceRef.current;
 
-    // Remove obsolete markers
-    markersMapRef.current.forEach((marker) => {
-      map.removeLayer(marker);
-    });
-    markersMapRef.current.clear();
+    syncMarkersToMap(
+      L,
+      map,
+      businesses,
+      selectedBusinessId,
+      markersMapRef.current,
+      onSelectBusiness,
+      center,
+      zoom
+    );
 
-    const validBusinesses = businesses.filter((biz) => biz.latitude && biz.longitude);
-
-    validBusinesses.forEach((biz) => {
-      const isSelected = biz.id === selectedBusinessId;
-      const customIcon = createMarkerIcon(L, biz.startingPrice, isSelected);
-
-      const marker = L.marker([biz.latitude, biz.longitude], {
-        icon: customIcon,
-        zIndexOffset: isSelected ? 1000 : 0,
-      }).addTo(map);
-
-      marker.bindPopup(createPopupContent(biz), {
-        maxWidth: 260,
-        className: 'bukk-custom-popup',
-      });
-
-      marker.on('click', () => {
-        if (onSelectBusiness) onSelectBusiness(biz);
-      });
-
-      markersMapRef.current.set(biz.id, marker);
-    });
-
-    // Automatically frame all pins with 45px padding so no edge pins are cut off
-    if (validBusinesses.length > 1) {
-      const bounds = L.latLngBounds(validBusinesses.map((b) => [b.latitude, b.longitude]));
-      map.fitBounds(bounds, { padding: [45, 45], maxZoom: 15 });
-    } else if (validBusinesses.length === 1) {
-      map.setView([validBusinesses[0].latitude, validBusinesses[0].longitude], zoom || 14);
-    } else {
-      map.setView(center, zoom);
-    }
-
-    // Trigger an immediate tile refresh after markers populate
     map.invalidateSize();
   }, [businesses]);
 
@@ -255,20 +326,19 @@ export function LeafletMap({
   const handleRecenter = useCallback(() => {
     if (!mapInstanceRef.current || !LRef.current) return;
     const L = LRef.current;
-    const valid = businesses.filter((b) => b.latitude && b.longitude);
-    if (valid.length > 1) {
-      const bounds = L.latLngBounds(valid.map((b) => [b.latitude, b.longitude]));
-      mapInstanceRef.current.fitBounds(bounds, {
-        padding: [45, 45],
-        maxZoom: 15,
-        animate: true,
-      });
-    } else if (valid.length === 1) {
-      mapInstanceRef.current.setView([valid[0].latitude, valid[0].longitude], 14, { animate: true });
-    } else {
-      mapInstanceRef.current.setView(center, zoom, { animate: true });
-    }
-  }, [businesses, center, zoom]);
+    const map = mapInstanceRef.current;
+    syncMarkersToMap(
+      L,
+      map,
+      businesses,
+      selectedBusinessId,
+      markersMapRef.current,
+      onSelectBusiness,
+      center,
+      zoom
+    );
+    map.invalidateSize();
+  }, [businesses, selectedBusinessId, onSelectBusiness, center, zoom]);
 
   return (
     <div
