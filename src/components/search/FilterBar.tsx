@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SearchFilters } from '@/types';
 import { INITIAL_CATEGORIES, DEHRADUN_NEIGHBORHOODS } from '@/lib/seed/data';
 import { Filter, Check, SlidersHorizontal, RotateCcw, X, ArrowRight } from 'lucide-react';
@@ -16,6 +16,29 @@ interface FilterBarProps {
 
 export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBarProps) {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+  // Lock body scroll and prevent Lenis hijacking when mobile filter drawer is open
+  useEffect(() => {
+    if (isMobileDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.stop();
+      }
+    } else {
+      document.body.style.overflow = 'unset';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
+    };
+  }, [isMobileDrawerOpen]);
+
   const categories = [{ id: 'all', name: 'All Categories' }, ...INITIAL_CATEGORIES];
 
   const timePeriods: { label: string; value: SearchFilters['timePeriod'] }[] = [
@@ -171,13 +194,21 @@ export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBar
 
       {/* MOBILE FILTER BOTTOM SHEET / DRAWER */}
       {isMobileDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs sm:hidden">
+        <div
+          role="dialog"
+          aria-modal="true"
+          data-lenis-prevent
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs sm:hidden overscroll-contain"
+        >
           <div
             className="absolute inset-0"
             onClick={() => setIsMobileDrawerOpen(false)}
           />
 
-          <div className="relative w-full max-h-[85vh] bg-white rounded-t-3xl border-t border-brand-border flex flex-col shadow-modal animate-slide-up overflow-hidden">
+          <div
+            data-lenis-prevent
+            className="relative w-full max-h-[85vh] bg-white rounded-t-3xl border-t border-brand-border flex flex-col shadow-modal animate-slide-up overflow-hidden overscroll-contain"
+          >
             {/* Mobile Pull / Drag Indicator */}
             <div className="flex justify-center pt-2.5 pb-1">
               <div className="w-10 h-1 rounded-full bg-neutral-300" />
@@ -204,7 +235,7 @@ export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBar
             </div>
 
             {/* Drawer Body Scrollable */}
-            <div className="p-5 overflow-y-auto space-y-5">
+            <div data-lenis-prevent className="p-5 overflow-y-auto overscroll-contain space-y-5 custom-scrollbar">
               {/* Category */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-brand-muted block">

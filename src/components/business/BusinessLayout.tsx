@@ -48,6 +48,28 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Lock body scroll and prevent Lenis hijacking when mobile menu sheet is open
+  useEffect(() => {
+    if (isMobileMoreOpen) {
+      document.body.style.overflow = 'hidden';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.stop();
+      }
+    } else {
+      document.body.style.overflow = 'unset';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
+    };
+  }, [isMobileMoreOpen]);
+
   useEffect(() => {
     const user = store.getCurrentUser();
     setCurrentUser(user);
@@ -276,9 +298,17 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
 
       {/* MOBILE MORE MENU BOTTOM SHEET */}
       {isMobileMoreOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs md:hidden">
+        <div
+          role="dialog"
+          aria-modal="true"
+          data-lenis-prevent
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs md:hidden overscroll-contain"
+        >
           <div className="absolute inset-0" onClick={() => setIsMobileMoreOpen(false)} />
-          <div className="relative w-full bg-white rounded-t-3xl border-t border-brand-border p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-modal animate-slide-up space-y-4">
+          <div
+            data-lenis-prevent
+            className="relative w-full bg-white rounded-t-3xl border-t border-brand-border p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-modal animate-slide-up space-y-4 overscroll-contain"
+          >
             <div className="flex items-center justify-between pb-2 border-b border-brand-border">
               <h3 className="font-extrabold text-base text-brand-black">Business Console Menu</h3>
               <button

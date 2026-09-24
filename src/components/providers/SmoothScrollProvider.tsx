@@ -33,6 +33,46 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
       gestureOrientation: 'vertical',
       smoothWheel: true,
       touchMultiplier: 1.4,
+      allowNestedScroll: true,
+      prevent: (node) => {
+        if (!node || !(node instanceof HTMLElement)) return false;
+
+        // 1. Explicit data-lenis-prevent attribute or parent with it
+        if (node.hasAttribute('data-lenis-prevent') || Boolean(node.closest('[data-lenis-prevent]'))) {
+          return true;
+        }
+
+        // 2. Modals, dialogs, drawers, popups, command palettes, dropdowns
+        if (
+          Boolean(
+            node.closest(
+              '[role="dialog"], [role="listbox"], [role="menu"], [aria-modal="true"], .modal, [data-modal], [data-palette]'
+            )
+          )
+        ) {
+          return true;
+        }
+
+        // 3. Fixed / sticky overlay layers (modal backdrops, drawer sheets, etc.)
+        if (Boolean(node.closest('.fixed.inset-0, .fixed.bottom-0'))) {
+          return true;
+        }
+
+        // 4. Any scrollable container
+        let curr: HTMLElement | null = node;
+        while (curr && curr !== document.body && curr !== document.documentElement) {
+          if (
+            curr.classList.contains('overflow-y-auto') ||
+            curr.classList.contains('overflow-auto') ||
+            curr.classList.contains('custom-scrollbar')
+          ) {
+            return true;
+          }
+          curr = curr.parentElement;
+        }
+
+        return false;
+      },
     });
 
     lenisRef.current = lenis;

@@ -385,7 +385,7 @@ export function Navbar() {
 
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden border-b border-brand-border bg-white px-4 pt-3 pb-6 space-y-4 animate-slide-down">
+          <div data-lenis-prevent className="lg:hidden border-b border-brand-border bg-white px-4 pt-3 pb-6 space-y-4 animate-slide-down">
             <button
               onClick={() => {
                 setIsLocationOpen(true);

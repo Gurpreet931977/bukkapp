@@ -119,6 +119,28 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [isPassModalOpen, setIsPassModalOpen] = useState(false);
 
+  // Lock body scroll and prevent Lenis background scrolling when pass modal is open
+  useEffect(() => {
+    if (isPassModalOpen) {
+      document.body.style.overflow = 'hidden';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.stop();
+      }
+    } else {
+      document.body.style.overflow = 'unset';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
+    };
+  }, [isPassModalOpen]);
+
   // Rotate search placeholder suggestions periodically (smooth kinetic flip)
   useEffect(() => {
     if (query) return;
@@ -1015,11 +1037,15 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
       {/* Interactive Live Booking Pass Modal */}
       {isPassModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          data-lenis-prevent
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overscroll-contain"
           onClick={() => setIsPassModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-md bg-white rounded-3xl border border-brand-border shadow-modal overflow-hidden animate-scale-in text-left"
+            data-lenis-prevent
+            className="relative w-full max-w-md bg-white rounded-3xl border border-brand-border shadow-modal overflow-hidden animate-scale-in text-left overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}

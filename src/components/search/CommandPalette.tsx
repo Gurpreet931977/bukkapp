@@ -38,13 +38,29 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  // Focus input automatically when opened
+  // Focus input automatically and lock background scroll when opened
   useEffect(() => {
     if (isOpen) {
       setQuery('');
       setSelectedIndex(0);
+      document.body.style.overflow = 'hidden';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.stop();
+      }
       setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      document.body.style.overflow = 'unset';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
     }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
+    };
   }, [isOpen]);
 
   // Global keyboard shortcut to open/close
@@ -152,11 +168,16 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-14 sm:pt-20 px-4 bg-brand-black/60 backdrop-blur-md animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search and Discovery Spotlight"
+      data-lenis-prevent
+      className="fixed inset-0 z-50 flex items-start justify-center pt-14 sm:pt-20 px-4 bg-brand-black/60 backdrop-blur-md animate-fade-in overscroll-contain"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl bg-white rounded-3xl border border-brand-border shadow-modal overflow-hidden animate-scale-in text-left flex flex-col max-h-[85vh]"
+        data-lenis-prevent
+        className="relative w-full max-w-2xl bg-white rounded-3xl border border-brand-border shadow-modal overflow-hidden animate-scale-in text-left flex flex-col max-h-[85vh] overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Shimmer Accent Header Line */}
@@ -203,7 +224,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         </div>
 
         {/* Content Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-6">
+        <div data-lenis-prevent className="p-4 sm:p-6 overflow-y-auto overscroll-contain space-y-6 custom-scrollbar">
           {!query.trim() ? (
             /* Default State: Trending Prompts & Top Verified Highlights */
             <>

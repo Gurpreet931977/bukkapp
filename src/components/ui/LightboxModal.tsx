@@ -37,12 +37,21 @@ export function LightboxModal({
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.stop();
+      }
       window.addEventListener('keydown', handleKeyDown);
     } else {
       document.body.style.overflow = '';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
     }
     return () => {
       document.body.style.overflow = '';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, handleKeyDown]);
@@ -51,7 +60,11 @@ export function LightboxModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 animate-fade-in select-none"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${businessName} Gallery`}
+      data-lenis-prevent
+      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 animate-fade-in select-none overscroll-contain"
       onClick={onClose}
     >
       {/* Top Bar */}

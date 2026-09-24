@@ -214,6 +214,13 @@ select:focus-visible {
   background: #A8A89C;
 }
 
+/* Guarantee nested scroll containment and touch smoothness on modals and popups */
+[data-lenis-prevent],
+[role="dialog"] {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 
 /* Leaflet Map Custom Luxury Styling */
 .leaflet-container {

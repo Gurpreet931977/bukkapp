@@ -59,7 +59,12 @@ export function Modal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      data-lenis-prevent
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto overscroll-contain"
+    >
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-200"
@@ -68,8 +73,9 @@ export function Modal({
 
       {/* Modal Dialog / Bottom Sheet on Mobile */}
       <div
+        data-lenis-prevent
         className={cn(
-          'relative w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-modal border-t sm:border border-brand-border/80 overflow-hidden z-10 animate-slide-up sm:animate-slide-down flex flex-col max-h-[90vh] sm:max-h-[calc(100vh-4rem)] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:pb-0',
+          'relative w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-modal border-t sm:border border-brand-border/80 overflow-hidden z-10 animate-slide-up sm:animate-slide-down flex flex-col max-h-[90vh] sm:max-h-[calc(100vh-4rem)] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:pb-0 overscroll-contain',
           maxWidths[maxWidth]
         )}
       >
@@ -108,7 +114,7 @@ export function Modal({
         )}
 
         {/* Content */}
-        <div className="p-4 sm:p-6 overflow-y-auto overscroll-contain flex-1 custom-scrollbar">{children}</div>
+        <div data-lenis-prevent className="p-4 sm:p-6 overflow-y-auto overscroll-contain flex-1 custom-scrollbar">{children}</div>
       </div>
     </div>
   );

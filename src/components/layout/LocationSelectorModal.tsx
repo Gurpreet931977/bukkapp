@@ -113,7 +113,7 @@ export function LocationSelectorModal({
           </div>
 
           {/* Dedicated Scroll Container Wrapper (prevents WebKit grid clipping, adds gutter & bottom padding) */}
-          <div className="overflow-y-auto overscroll-contain max-h-[290px] sm:max-h-[330px] pr-2 -mr-2 pb-2 custom-scrollbar">
+          <div data-lenis-prevent className="overflow-y-auto overscroll-contain max-h-[290px] sm:max-h-[330px] pr-2 -mr-2 pb-2 custom-scrollbar">
             {filteredNeighborhoods.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {filteredNeighborhoods.map((hood) => {

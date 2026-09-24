@@ -225,8 +225,9 @@ export function CustomSelect({
         <div
           role="listbox"
           tabIndex={-1}
+          data-lenis-prevent
           className={cn(
-            'absolute left-0 right-0 z-50 mt-1.5 bg-white/98 backdrop-blur-xl border border-brand-border shadow-modal rounded-2xl p-1.5 animate-slide-down min-w-[200px] overflow-hidden',
+            'absolute left-0 right-0 z-50 mt-1.5 bg-white/98 backdrop-blur-xl border border-brand-border shadow-modal rounded-2xl p-1.5 animate-slide-down min-w-[200px] overflow-hidden overscroll-contain',
             dropdownClassName
           )}
         >
@@ -260,7 +261,7 @@ export function CustomSelect({
           )}
 
           {/* Options Scrollable Container */}
-          <div ref={listRef} className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5">
+          <div ref={listRef} data-lenis-prevent className="max-h-60 overflow-y-auto no-scrollbar space-y-0.5 overscroll-contain">
             {filteredOptions.length === 0 ? (
               <div className="py-4 text-center text-xs text-brand-secondary font-medium">
                 No matching options found
