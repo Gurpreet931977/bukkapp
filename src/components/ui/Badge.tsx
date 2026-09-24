@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Zap, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Zap, Clock, AlertCircle, Check } from 'lucide-react';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: 'lime' | 'dark' | 'neutral' | 'verified' | 'urgent' | 'outline';
@@ -27,14 +27,18 @@ export function Badge({
     lime: 'bg-brand-lime text-brand-black font-semibold shadow-xs',
     dark: 'bg-brand-black text-white',
     neutral: 'bg-brand-surface-alt text-brand-secondary border border-brand-border/60',
-    verified: 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-medium',
+    verified: 'bg-brand-lime/20 text-brand-black border border-brand-lime/60 font-semibold',
     urgent: 'bg-amber-50 text-amber-800 border border-amber-200/80 font-medium',
     outline: 'bg-transparent text-brand-black border border-brand-border',
   };
 
   return (
     <span className={cn(baseStyles, sizes[size], variants[variant], className)} {...props}>
-      {icon === 'verified' && <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />}
+      {icon === 'verified' && (
+        <span className="w-3 h-3 rounded-full bg-brand-black text-brand-lime flex items-center justify-center shrink-0">
+          <Check className="w-2 h-2 stroke-[3.5]" />
+        </span>
+      )}
       {icon === 'clock' && <Clock className="w-3 h-3 text-brand-secondary shrink-0" />}
       {icon === 'sparkle' && <Zap className="w-3 h-3 text-brand-black shrink-0" />}
       {icon === 'urgent' && <AlertCircle className="w-3 h-3 text-amber-600 shrink-0" />}
@@ -47,11 +51,13 @@ export function VerifiedBadge({ className, text = 'Verified' }: { className?: st
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/70',
+        'inline-flex items-center gap-1 text-[11px] font-bold text-brand-black bg-brand-lime/20 px-2 py-0.5 rounded-full border border-brand-lime/60 shadow-2xs',
         className
       )}
     >
-      <CheckCircle2 className="w-3 h-3 fill-emerald-600 text-white shrink-0" />
+      <span className="w-3 h-3 rounded-full bg-brand-black text-brand-lime flex items-center justify-center shrink-0">
+        <Check className="w-2 h-2 stroke-[3.5]" />
+      </span>
       <span>{text}</span>
     </span>
   );

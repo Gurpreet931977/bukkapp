@@ -31,18 +31,18 @@ import {
 
 export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'businesses' | 'bookings' | 'categories' | 'reviews' | 'users' | 'audit'>('overview');
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>(() => store.getAllBusinessesAdmin());
+  const [bookings, setBookings] = useState<Booking[]>(() => store.getAllBookings());
+  const [categories, setCategories] = useState<Category[]>(() => store.getAllCategoriesAdmin());
+  const [reviews, setReviews] = useState<Review[]>(() => store.getAllReviewsAdmin());
+  const [users, setUsers] = useState<User[]>(() => store.getUsers());
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => store.getAuditLogs());
 
   // Filters
   const [businessStatusFilter, setBusinessStatusFilter] = useState<'all' | BusinessStatus>('all');
   const [businessTypeFilter, setBusinessTypeFilter] = useState<'all' | 'real' | 'demo'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isDemoEnabled, setIsDemoEnabled] = useState(true);
+  const [isDemoEnabled, setIsDemoEnabled] = useState(() => store.isDemoBrandsEnabled());
 
   // Modals
   const [selectedBizForAction, setSelectedBizForAction] = useState<Business | null>(null);

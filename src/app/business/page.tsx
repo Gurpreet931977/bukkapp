@@ -63,18 +63,19 @@ export default function BusinessPage() {
     <div className="min-h-screen bg-[#FAFAF8] pb-20">
       {/* Hero Header */}
       <section className="relative overflow-hidden bg-brand-black text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#C7F36B]/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-lime/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-5xl mx-auto text-center relative z-10 space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-xs font-bold text-[#C7F36B]">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-xs font-bold text-brand-lime">
             <Store className="w-3.5 h-3.5" />
             <span>BUKKAPP Merchant Partner Network</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-display font-black tracking-tight leading-tight">
             Turn your local business into a{' '}
-            <span className="text-[#C7F36B] underline decoration-[#C7F36B]/40">
-              bookable powerhouse.
+            <span className="relative inline-block text-brand-lime">
+              <span>bookable powerhouse.</span>
+              <span className="absolute left-0 -bottom-1 sm:-bottom-1.5 w-full h-1 sm:h-1.5 bg-brand-lime/35 rounded-full" />
             </span>
           </h1>
 
@@ -88,7 +89,7 @@ export default function BusinessPage() {
               <Button
                 variant="accent"
                 size="lg"
-                className="w-full sm:w-auto font-extrabold text-sm px-8 py-4 shadow-lg"
+                className="w-full sm:w-auto font-black text-sm px-8 py-4 shadow-lg active:scale-98"
               >
                 <span>Register Your Business</span>
                 <ArrowRight className="w-4 h-4" />
@@ -96,26 +97,25 @@ export default function BusinessPage() {
             </Link>
 
             <Link href="/login?tab=standard">
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full sm:w-auto font-bold text-sm px-8 py-4 border-neutral-700 text-white hover:bg-neutral-800"
+              <button
+                type="button"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 font-bold text-sm px-8 py-4 rounded-[14px] bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/30 text-white transition-all duration-150 active:scale-[0.98] shadow-subtle cursor-pointer"
               >
-                <LogIn className="w-4 h-4 text-[#C7F36B]" />
+                <LogIn className="w-4 h-4 text-brand-lime" />
                 <span>Existing Merchant Sign In</span>
-              </Button>
+              </button>
             </Link>
           </div>
 
-          <div className="pt-4 flex items-center justify-center gap-6 text-xs text-neutral-400 font-medium">
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-neutral-400 font-medium">
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#C7F36B]" /> 3-Minute Setup
+              <CheckCircle2 className="w-4 h-4 text-brand-lime" /> 3-Minute Setup
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#C7F36B]" /> Zero Commission Launch Tier
+              <CheckCircle2 className="w-4 h-4 text-brand-lime" /> Zero Commission Launch Tier
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#C7F36B]" /> Cancel Anytime
+              <CheckCircle2 className="w-4 h-4 text-brand-lime" /> Cancel Anytime
             </span>
           </div>
         </div>
@@ -138,8 +138,8 @@ export default function BusinessPage() {
               key={idx}
               className="bg-white p-6 rounded-3xl border-2 border-brand-border/80 shadow-xs hover:border-brand-black hover:shadow-md transition-all space-y-3"
             >
-              <div className="w-10 h-10 rounded-2xl bg-[#FAFDF4] border border-[#D5F58D] text-[#558B07] flex items-center justify-center">
-                <feat.icon className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-2xl bg-brand-lime/15 border border-brand-lime/30 text-brand-black flex items-center justify-center">
+                <feat.icon className="w-5 h-5 text-brand-black" />
               </div>
               <h3 className="text-base font-bold text-brand-black">{feat.title}</h3>
               <p className="text-xs text-brand-muted leading-relaxed">{feat.desc}</p>
@@ -158,7 +158,7 @@ export default function BusinessPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
           <div className="space-y-2">
-            <div className="w-10 h-10 rounded-full bg-brand-black text-[#C7F36B] font-black text-sm flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-full bg-brand-black text-brand-lime font-black text-sm flex items-center justify-center mx-auto shadow-2xs">
               1
             </div>
             <h4 className="text-sm font-bold text-brand-black">Create Your Account</h4>
@@ -168,7 +168,7 @@ export default function BusinessPage() {
           </div>
 
           <div className="space-y-2">
-            <div className="w-10 h-10 rounded-full bg-brand-black text-[#C7F36B] font-black text-sm flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-full bg-brand-black text-brand-lime font-black text-sm flex items-center justify-center mx-auto shadow-2xs">
               2
             </div>
             <h4 className="text-sm font-bold text-brand-black">Add Services & Hours</h4>
@@ -178,7 +178,7 @@ export default function BusinessPage() {
           </div>
 
           <div className="space-y-2">
-            <div className="w-10 h-10 rounded-full bg-brand-black text-[#C7F36B] font-black text-sm flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-full bg-brand-black text-brand-lime font-black text-sm flex items-center justify-center mx-auto shadow-2xs">
               3
             </div>
             <h4 className="text-sm font-bold text-brand-black">Receive Bookings</h4>

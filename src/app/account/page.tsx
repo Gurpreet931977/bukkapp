@@ -26,10 +26,16 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 
 function AccountContent() {
   const searchParams = useSearchParams();
-  const [user, setUser] = useState(store.getCurrentUser());
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [favorites, setFavorites] = useState<Business[]>([]);
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'past' | 'favorites'>('upcoming');
+  const [user, setUser] = useState(() => store.getCurrentUser());
+  const [bookings, setBookings] = useState<Booking[]>(() => store.getBookingsByUser(store.getCurrentUser().id));
+  const [favorites, setFavorites] = useState<Business[]>(() => store.getFavorites());
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past' | 'favorites'>(() => {
+    const tabParam = searchParams?.get('tab');
+    if (tabParam === 'upcoming' || tabParam === 'past' || tabParam === 'favorites') {
+      return tabParam;
+    }
+    return 'upcoming';
+  });
 
   // Review Modal State
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);

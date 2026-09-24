@@ -36,6 +36,9 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
     });
 
     lenisRef.current = lenis;
+    if (typeof window !== 'undefined') {
+      (window as any).__lenis = lenis;
+    }
 
     // Connect Lenis scroll events to GSAP ScrollTrigger
     lenis.on('scroll', ScrollTrigger.update);
@@ -78,11 +81,62 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
       gsap.ticker.remove(onTick);
       lenis.destroy();
       lenisRef.current = null;
+      if (typeof window !== 'undefined') {
+        (window as any).__lenis = null;
+      }
     };
   }, []);
 
-  // On route changes, scroll smoothly to top and refresh ScrollTrigger calculations
+  // Guarantee that hashtags never appear or persist in the browser address bar
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const stripHashFromUrl = () => {
+      if (window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    };
+
+    stripHashFromUrl();
+    window.addEventListener('hashchange', stripHashFromUrl);
+    return () => window.removeEventListener('hashchange', stripHashFromUrl);
+  }, []);
+
+  // On route changes, check for hash anchor target first or cross-page scroll target, then scroll cleanly
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // 1. If arriving with an existing hash (e.g. from an old link or bookmark), scroll to target and strip hash from URL
+    if (window.location.hash) {
+      const hash = window.location.hash;
+      const target = document.querySelector(hash);
+
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+
+      if (target && lenisRef.current) {
+        setTimeout(() => {
+          lenisRef.current?.scrollTo(target as HTMLElement, { offset: -70, immediate: true });
+          ScrollTrigger.refresh();
+        }, 50);
+        return;
+      }
+    }
+
+    // 2. Check for cross-page scroll target stored in sessionStorage
+    const scrollTargetId = sessionStorage.getItem('bukkapp_scroll_target');
+    if (scrollTargetId) {
+      sessionStorage.removeItem('bukkapp_scroll_target');
+      const target = document.getElementById(scrollTargetId);
+      if (target && lenisRef.current) {
+        setTimeout(() => {
+          lenisRef.current?.scrollTo(target, { offset: -70, duration: 0.9 });
+          ScrollTrigger.refresh();
+        }, 80);
+        return;
+      }
+    }
+
+    // 3. Normal navigation: scroll to top
     if (lenisRef.current) {
       lenisRef.current.scrollTo(0, { immediate: true });
     }

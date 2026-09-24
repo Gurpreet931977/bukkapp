@@ -28,7 +28,10 @@ export default function BookingConfirmationPage() {
   const router = useRouter();
   const bookingId = params?.bookingId as string;
 
-  const [booking, setBooking] = useState<Booking | null>(null);
+  const [booking, setBooking] = useState<Booking | null>(() => {
+    if (!bookingId) return null;
+    return store.getBookingById(bookingId) || null;
+  });
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {

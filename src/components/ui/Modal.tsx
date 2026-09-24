@@ -28,13 +28,22 @@ export function Modal({
 
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.stop();
+      }
       window.addEventListener('keydown', handleKeyDown);
     } else {
       document.body.style.overflow = 'unset';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
     }
 
     return () => {
       document.body.style.overflow = 'unset';
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);

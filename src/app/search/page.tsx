@@ -27,58 +27,88 @@ function SearchPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [queryInput, setQueryInput] = useState(searchParams.get('q') || '');
-  const [filters, setFilters] = useState<SearchFilters>({
-    query: searchParams.get('q') || undefined,
-    category: searchParams.get('category') || undefined,
-    neighborhood: searchParams.get('neighborhood') || undefined,
-    date: searchParams.get('date') || undefined,
-    sortBy: (searchParams.get('sort') as any) || 'recommended',
+  const rawQ = searchParams.get('q') || '';
+  const paramCat = searchParams.get('category') || undefined;
+  const paramHood = searchParams.get('neighborhood') || undefined;
+  const paramDate = searchParams.get('date') || undefined;
+  const paramSort = (searchParams.get('sort') as any) || 'recommended';
+
+  const [queryInput, setQueryInput] = useState(rawQ);
+  const [filters, setFilters] = useState<SearchFilters>(() => ({
+    query: rawQ || undefined,
+    category: paramCat,
+    neighborhood: paramHood,
+    date: paramDate,
+    sortBy: paramSort,
+  }));
+
+  const [businesses, setBusinesses] = useState<Business[]>(() => {
+    return store.getBusinesses({
+      query: rawQ || undefined,
+      category: paramCat,
+      neighborhood: paramHood,
+      date: paramDate,
+      sortBy: paramSort,
+    });
   });
 
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [parsedIntent, setParsedIntent] = useState<ParsedSearchIntent | null>(null);
+  const [parsedIntent, setParsedIntent] = useState<ParsedSearchIntent | null>(() => {
+    if (!rawQ) return null;
+    const intent = SearchIntentParser.parse(rawQ);
+    return intent.confidence > 0 ? intent : null;
+  });
+
   const [viewMode, setViewMode] = useState<'grid' | 'split'>('grid');
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | undefined>(undefined);
 
-  // Sync state when searchParams change or filters update
+  // Sync state when URL searchParams change
   useEffect(() => {
-    const rawQ = searchParams.get('q') || '';
-    if (rawQ) {
-      setQueryInput(rawQ);
-      const intent = SearchIntentParser.parse(rawQ);
+    const q = searchParams.get('q') || '';
+    setQueryInput(q);
+    if (q) {
+      const intent = SearchIntentParser.parse(q);
       setParsedIntent(intent.confidence > 0 ? intent : null);
     } else {
       setParsedIntent(null);
     }
 
-    const currentFilters: SearchFilters = {
-      query: rawQ || undefined,
-      category: searchParams.get('category') || filters.category,
-      neighborhood: searchParams.get('neighborhood') || filters.neighborhood,
-      date: searchParams.get('date') || filters.date,
-      sortBy: (searchParams.get('sort') as any) || filters.sortBy || 'recommended',
-      verifiedOnly: filters.verifiedOnly,
-      timePeriod: filters.timePeriod,
+    const updatedFilters: SearchFilters = {
+      query: q || undefined,
+      category: searchParams.get('category') || undefined,
+      neighborhood: searchParams.get('neighborhood') || undefined,
+      date: searchParams.get('date') || undefined,
+      sortBy: (searchParams.get('sort') as any) || 'recommended',
     };
+    setFilters(updatedFilters);
+    setBusinesses(store.getBusinesses(updatedFilters));
+  }, [searchParams]);
 
-    const results = store.getBusinesses(currentFilters);
-    setBusinesses(results);
-  }, [searchParams, filters]);
+  const handleFiltersChange = (newFilters: SearchFilters) => {
+    setFilters(newFilters);
+    setBusinesses(store.getBusinesses(newFilters));
+
+    // Synchronize to URL without full page reload
+    const params = new URLSearchParams();
+    if (newFilters.query) params.set('q', newFilters.query);
+    if (newFilters.category) params.set('category', newFilters.category);
+    if (newFilters.neighborhood) params.set('neighborhood', newFilters.neighborhood);
+    if (newFilters.date) params.set('date', newFilters.date);
+    if (newFilters.sortBy && newFilters.sortBy !== 'recommended') params.set('sort', newFilters.sortBy);
+
+    const queryString = params.toString();
+    router.replace(queryString ? `/search?${queryString}` : '/search', { scroll: false });
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (queryInput.trim()) params.set('q', queryInput.trim());
-    if (filters.category) params.set('category', filters.category);
-    if (filters.neighborhood) params.set('neighborhood', filters.neighborhood);
-    router.push(`/search?${params.toString()}`);
+    const newFilters = { ...filters, query: queryInput.trim() || undefined };
+    handleFiltersChange(newFilters);
   };
 
   const handleResetFilters = () => {
     setQueryInput('');
-    setFilters({ sortBy: 'recommended' });
-    router.push('/search');
+    setParsedIntent(null);
+    handleFiltersChange({ sortBy: 'recommended' });
   };
 
   return (
@@ -168,7 +198,7 @@ function SearchPageContent() {
         {/* Filter Controls Bar */}
         <FilterBar
           filters={filters}
-          onChange={(newF) => setFilters(newF)}
+          onChange={handleFiltersChange}
           onReset={handleResetFilters}
           resultCount={businesses.length}
         />

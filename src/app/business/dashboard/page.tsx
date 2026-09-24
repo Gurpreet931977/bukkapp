@@ -32,8 +32,18 @@ export default function BusinessDashboardPage() {
     const u = store.getCurrentUser();
     return u?.businessId ? store.getBusinessById(u.businessId) || all[0] : all[0];
   });
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>(() => {
+    const all = store.getAllBusinessesAdmin();
+    const u = store.getCurrentUser();
+    const activeBiz = u?.businessId ? store.getBusinessById(u.businessId) || all[0] : all[0];
+    return activeBiz ? store.getBookingsByBusinessId(activeBiz.id) : [];
+  });
+  const [services, setServices] = useState<Service[]>(() => {
+    const all = store.getAllBusinessesAdmin();
+    const u = store.getCurrentUser();
+    const activeBiz = u?.businessId ? store.getBusinessById(u.businessId) || all[0] : all[0];
+    return activeBiz ? store.getServicesByBusinessId(activeBiz.id) : [];
+  });
   const [isAddBookingModalOpen, setIsAddBookingModalOpen] = useState(false);
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
 

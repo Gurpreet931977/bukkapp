@@ -215,38 +215,310 @@ select:focus-visible {
 }
 
 
-/* Leaflet Map Custom Styling */
+/* Leaflet Map Custom Luxury Styling */
 .leaflet-container {
   width: 100%;
   height: 100%;
-  border-radius: 14px;
+  border-radius: 20px;
   z-index: 10;
-  background-color: #F3F3EF;
+  background-color: #EAEAE4;
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+.custom-leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Luxury BUKKAPP Map Price Pin */
+.bukk-map-pin,
 .custom-map-pin {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   background: #111111;
   color: #FFFFFF;
+  font-family: var(--font-body), sans-serif;
   font-weight: 800;
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 6px;
+  font-size: 11.5px;
+  line-height: 1;
+  padding: 5px 10px;
+  border-radius: 9999px;
   border: 1.5px solid #FFFFFF;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22), 0 1px 3px rgba(0, 0, 0, 0.12);
   white-space: nowrap;
-  letter-spacing: -0.02em;
-  transition: all 0.15s ease;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  user-select: none;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease, color 0.15s ease;
 }
 
+/* Downward indicator stem */
+.bukk-map-pin::after,
+.custom-map-pin::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4.5px solid transparent;
+  border-right: 4.5px solid transparent;
+  border-top: 5.5px solid #111111;
+  transition: border-top-color 0.15s ease;
+}
+
+.bukk-map-pin:hover,
+.custom-map-pin:hover {
+  transform: scale(1.12) translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  z-index: 500;
+}
+
+.bukk-map-pin.active,
 .custom-map-pin.active {
   background: #C7F36B;
   color: #111111;
   border-color: #111111;
-  transform: scale(1.12);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: scale(1.22) translateY(-4px);
+  box-shadow: 0 0 0 3px rgba(199, 243, 107, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 1000 !important;
+}
+
+.bukk-map-pin.active::after,
+.custom-map-pin.active::after {
+  border-top-color: #111111;
+}
+
+/* Modern Minimalist Leaflet Zoom Controls */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  margin-top: 12px !important;
+  margin-left: 12px !important;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  background-color: #FFFFFF !important;
+  color: #111111 !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 30px !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid #ECECE8 !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background-color: #F5F5F0 !important;
+  color: #000000 !important;
+}
+
+.leaflet-control-zoom-out {
+  border-bottom: none !important;
+}
+
+/* Luxury Leaflet Popup Architecture */
+.leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: #FFFFFF !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: normal !important;
+}
+
+.leaflet-popup-tip-container {
+  overflow: visible !important;
+}
+
+.leaflet-popup-tip {
+  background: #FFFFFF !important;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12) !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  top: 8px !important;
+  right: 8px !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(6px) !important;
+  color: #111111 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  z-index: 25 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.15s ease !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  background: #111111 !important;
+  color: #FFFFFF !important;
+}
+
+/* Rich Popup Content Card */
+.bukk-popup-card {
+  width: 240px;
+  background: #FFFFFF;
+  border-radius: 18px;
+  overflow: hidden;
+  font-family: var(--font-body), sans-serif;
+}
+
+.bukk-popup-media {
+  position: relative;
+  width: 100%;
+  height: 105px;
+  background-size: cover;
+  background-position: center;
+  background-color: #E7E7E3;
+}
+
+.bukk-popup-tag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(17, 17, 17, 0.82);
+  backdrop-filter: blur(4px);
+  color: #FFFFFF;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 7px;
+  border-radius: 6px;
+}
+
+.bukk-popup-verified {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #C7F36B;
+  color: #111111;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 6px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.bukk-popup-content {
+  padding: 12px 14px 14px;
+}
+
+.bukk-popup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.bukk-popup-title {
+  font-family: var(--font-display), sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  color: #111111;
+  line-height: 1.25;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bukk-popup-rating {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111111;
+  flex-shrink: 0;
+}
+
+.bukk-star {
+  color: #F59E0B;
+  font-size: 11px;
+}
+
+.bukk-rating-val {
+  font-weight: 800;
+}
+
+.bukk-rating-count {
+  color: #888888;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.bukk-popup-loc {
+  font-size: 11px;
+  color: #666666;
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+
+.bukk-popup-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #F0F0EC;
+  padding-top: 10px;
+}
+
+.bukk-from-label {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #999999;
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+.bukk-price-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: -0.02em;
+}
+
+.bukk-popup-btn {
+  display: inline-flex;
+  align-items: center;
+  background: #111111;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.bukk-popup-btn:hover {
+  background: #C7F36B;
+  color: #111111;
 }
 
 /* Selection */

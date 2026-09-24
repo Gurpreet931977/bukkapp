@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Business } from '@/types';
-import { MapPin, Bookmark, ArrowRight } from 'lucide-react';
+import { MapPin, Bookmark, ArrowRight, Star } from 'lucide-react';
 import { VerifiedBadge, AvailabilityBadge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatPrice } from '@/lib/utils';
@@ -79,7 +79,7 @@ export function BusinessCard({ business, onQuickBook }: BusinessCardProps) {
               </h3>
             </Link>
             <div className="flex items-center gap-1.5 shrink-0 bg-neutral-100/90 px-2.5 py-1 rounded-lg border border-neutral-200/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <Star className="w-2.5 h-2.5 fill-brand-black text-brand-black shrink-0" />
               <span className="text-xs font-black text-brand-black">{business.rating}</span>
               <span className="text-[10px] text-neutral-400 font-semibold">({business.reviewCount})</span>
             </div>

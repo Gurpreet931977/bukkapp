@@ -20,17 +20,23 @@ import {
 } from 'lucide-react';
 
 export default function BusinessProfileEditorPage() {
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [name, setName] = useState('');
-  const [tagline, setTagline] = useState('');
-  const [description, setDescription] = useState('');
-  const [address, setAddress] = useState('');
-  const [neighborhood, setNeighborhood] = useState('Rajpur Road');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [website, setWebsite] = useState('');
-  const [instagram, setInstagram] = useState('');
-  const [coverImage, setCoverImage] = useState('');
+  const getInitialBiz = () => {
+    const user = store.getCurrentUser();
+    const allBiz = store.getAllBusinessesAdmin();
+    return user.businessId ? store.getBusinessById(user.businessId) || allBiz[0] : allBiz[0];
+  };
+
+  const [business, setBusiness] = useState<Business | null>(getInitialBiz);
+  const [name, setName] = useState(() => getInitialBiz()?.name || '');
+  const [tagline, setTagline] = useState(() => getInitialBiz()?.tagline || '');
+  const [description, setDescription] = useState(() => getInitialBiz()?.description || '');
+  const [address, setAddress] = useState(() => getInitialBiz()?.address || '');
+  const [neighborhood, setNeighborhood] = useState(() => getInitialBiz()?.neighborhood || 'Rajpur Road');
+  const [phone, setPhone] = useState(() => getInitialBiz()?.phone || '');
+  const [email, setEmail] = useState(() => getInitialBiz()?.email || '');
+  const [website, setWebsite] = useState(() => getInitialBiz()?.website || '');
+  const [instagram, setInstagram] = useState(() => getInitialBiz()?.instagram || '');
+  const [coverImage, setCoverImage] = useState(() => getInitialBiz()?.coverImage || '');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const refreshData = () => {

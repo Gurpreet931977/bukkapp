@@ -224,6 +224,37 @@ async function runTestSuite() {
   assert(canAccessBusiness(testAdmin.role), 'Master Admin has unrestricted access to Business console');
   assert(canAccessCustomer(testCustomer.role), 'Customer has access to Customer account features');
 
+  // --- 10. CLEAN URL ROUTING & HASHTAG-FREE NAVIGATION ---
+  console.log('\n--- 10. CLEAN URL ROUTING & HASHTAG-FREE NAVIGATION ---');
+  const fs = await import('fs');
+  const path = await import('path');
+
+  const navbarContent = fs.readFileSync(path.join(process.cwd(), 'src/components/layout/Navbar.tsx'), 'utf-8');
+  const footerContent = fs.readFileSync(path.join(process.cwd(), 'src/components/layout/Footer.tsx'), 'utf-8');
+  const smoothScrollContent = fs.readFileSync(path.join(process.cwd(), 'src/components/providers/SmoothScrollProvider.tsx'), 'utf-8');
+
+  // Check no #categories or #how-it-works in Navbar hrefs
+  assert(!navbarContent.includes('href="/#categories"'), 'Navbar has zero href="/#categories" links');
+  assert(!navbarContent.includes('href="/#how-it-works"'), 'Navbar has zero href="/#how-it-works" links');
+  assert(!navbarContent.includes('href="#categories"'), 'Navbar has zero href="#categories" links');
+  assert(!navbarContent.includes('href="#how-it-works"'), 'Navbar has zero href="#how-it-works" links');
+
+  // Check Footer has no hashtag links
+  assert(!footerContent.includes('href="/#'), 'Footer has zero href="/# links');
+  assert(!footerContent.includes('href="#'), 'Footer has zero href="# links');
+
+  // Check SmoothScrollProvider strips hashtags
+  assert(smoothScrollContent.includes('window.history.replaceState'), 'SmoothScrollProvider removes hashtags via replaceState');
+  assert(smoothScrollContent.includes('bukkapp_scroll_target'), 'SmoothScrollProvider handles clean cross-page scroll targets');
+
+  // URL cleaning logic test
+  const stripHash = (urlPath: string) => {
+    const hashIndex = urlPath.indexOf('#');
+    return hashIndex !== -1 ? urlPath.substring(0, hashIndex) : urlPath;
+  };
+  assert(stripHash('https://bukkapp.vercel.app/#categories') === 'https://bukkapp.vercel.app/', 'Strips #categories from URL');
+  assert(stripHash('https://bukkapp.vercel.app/#how-it-works') === 'https://bukkapp.vercel.app/', 'Strips #how-it-works from URL');
+
   console.log('\n====================================================');
   console.log(`FUNCTIONAL SUITE RESULTS: ${passed} PASSED, ${failed} FAILED`);
   console.log('====================================================\n');

@@ -38,13 +38,31 @@ export default function BusinessProfilePage() {
   const router = useRouter();
   const slug = params?.slug as string;
 
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [services, setServices] = useState<Service[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [similarBusinesses, setSimilarBusinesses] = useState<Business[]>([]);
+  const [business, setBusiness] = useState<Business | null>(() => {
+    return slug ? store.getBusinessBySlug(slug) || null : null;
+  });
+  const [services, setServices] = useState<Service[]>(() => {
+    const biz = slug ? store.getBusinessBySlug(slug) : null;
+    return biz ? store.getServicesByBusinessId(biz.id) : [];
+  });
+  const [reviews, setReviews] = useState<Review[]>(() => {
+    const biz = slug ? store.getBusinessBySlug(slug) : null;
+    return biz ? store.getReviewsByBusinessId(biz.id) : [];
+  });
+  const [similarBusinesses, setSimilarBusinesses] = useState<Business[]>(() => {
+    const biz = slug ? store.getBusinessBySlug(slug) : null;
+    if (!biz) return [];
+    return store
+      .getBusinesses({ category: biz.categoryId })
+      .filter((b) => b.id !== biz.id)
+      .slice(0, 3);
+  });
   const [selectedServiceForBooking, setSelectedServiceForBooking] = useState<Service | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState<boolean>(() => {
+    const biz = slug ? store.getBusinessBySlug(slug) : null;
+    return biz ? store.isFavorite(biz.id) : false;
+  });
   const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {

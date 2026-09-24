@@ -31,19 +31,34 @@ export default function DedicatedBookingPage() {
   const businessSlug = params?.businessSlug as string;
   const serviceId = params?.serviceId as string;
 
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [service, setService] = useState<Service | null>(null);
+  const [business, setBusiness] = useState<Business | null>(() => {
+    if (!businessSlug) return null;
+    return store.getBusinessBySlug(businessSlug) || null;
+  });
+  const [service, setService] = useState<Service | null>(() => {
+    if (!businessSlug) return null;
+    const biz = store.getBusinessBySlug(businessSlug);
+    if (!biz) return null;
+    return store.getServiceById(serviceId) || store.getServicesByBusinessId(biz.id)[0] || null;
+  });
 
   const todayStr = getTodayDateString();
   const tomorrowStr = getTomorrowDateString();
 
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>(() => {
+    if (!businessSlug) return [];
+    const biz = store.getBusinessBySlug(businessSlug);
+    if (!biz) return [];
+    const srv = store.getServiceById(serviceId) || store.getServicesByBusinessId(biz.id)[0];
+    const duration = srv?.durationMinutes || 45;
+    return BookingEngine.generateSlotsForDate(biz, todayStr, duration, store.getAllBookings());
+  });
 
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerName, setCustomerName] = useState(() => store.getCurrentUser()?.name || '');
+  const [customerPhone, setCustomerPhone] = useState(() => store.getCurrentUser()?.phone || '');
+  const [customerEmail, setCustomerEmail] = useState(() => store.getCurrentUser()?.email || '');
   const [specialRequests, setSpecialRequests] = useState('');
   const [paymentChoice, setPaymentChoice] = useState<'cashfree' | 'pay_at_venue'>('cashfree');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,9 +75,9 @@ export default function DedicatedBookingPage() {
 
       const currentUser = store.getCurrentUser();
       if (currentUser) {
-        setCustomerName(currentUser.name || '');
-        setCustomerPhone(currentUser.phone || '');
-        setCustomerEmail(currentUser.email || '');
+        setCustomerName((prev) => prev || currentUser.name || '');
+        setCustomerPhone((prev) => prev || currentUser.phone || '');
+        setCustomerEmail((prev) => prev || currentUser.email || '');
       }
     }
   }, [businessSlug, serviceId]);
@@ -73,7 +88,6 @@ export default function DedicatedBookingPage() {
     const duration = service?.durationMinutes || 45;
     const slots = BookingEngine.generateSlotsForDate(business, selectedDate, duration, existingBookings);
     setAvailableSlots(slots);
-    setSelectedSlot(null);
   }, [business, selectedDate, service]);
 
   if (!business || !service) {

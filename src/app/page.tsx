@@ -12,12 +12,37 @@ import { store } from '@/lib/db/store';
 import { Business } from '@/types';
 
 export default function HomePage() {
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [currentLocation, setCurrentLocation] = useState('Dehradun');
+  const [businesses, setBusinesses] = useState<Business[]>(() => store.getBusinesses());
+  const [currentLocation, setCurrentLocation] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bukkapp_location') || 'Dehradun';
+    }
+    return 'Dehradun';
+  });
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
+  const handleSelectLocation = (loc: string) => {
+    setCurrentLocation(loc);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bukkapp_location', loc);
+      window.dispatchEvent(new CustomEvent('bukkapp:location-change', { detail: loc }));
+    }
+  };
+
   useEffect(() => {
-    setBusinesses(store.getBusinesses());
+    const handleLoc = (e: any) => {
+      if (e.detail) setCurrentLocation(e.detail);
+    };
+    window.addEventListener('bukkapp:location-change', handleLoc);
+    return () => window.removeEventListener('bukkapp:location-change', handleLoc);
+  }, []);
+
+  useEffect(() => {
+    // Keep in sync with store updates
+    const unsub = store.subscribe(() => {
+      setBusinesses(store.getBusinesses());
+    });
+    return unsub;
   }, []);
 
   return (
@@ -48,7 +73,7 @@ export default function HomePage() {
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
         currentLocation={currentLocation}
-        onSelectLocation={(loc) => setCurrentLocation(loc)}
+        onSelectLocation={handleSelectLocation}
       />
     </main>
   );

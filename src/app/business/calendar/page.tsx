@@ -18,9 +18,23 @@ import {
 } from 'lucide-react';
 
 export default function BusinessCalendarPage() {
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
+  const [business, setBusiness] = useState<Business | null>(() => {
+    const all = store.getAllBusinessesAdmin();
+    const u = store.getCurrentUser();
+    return u?.businessId ? store.getBusinessById(u.businessId) || all[0] : all[0];
+  });
+  const [bookings, setBookings] = useState<Booking[]>(() => {
+    const all = store.getAllBusinessesAdmin();
+    const u = store.getCurrentUser();
+    const activeBiz = u?.businessId ? store.getBusinessById(u.businessId) || all[0] : all[0];
+    return activeBiz ? store.getBookingsByBusinessId(activeBiz.id) : [];
+  });
+  const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>(() => {
+    const all = store.getAllBusinessesAdmin();
+    const u = store.getCurrentUser();
+    const activeBiz = u?.businessId ? store.getBusinessById(u.businessId) || all[0] : all[0];
+    return activeBiz ? store.getBlockedTimesByBusinessId(activeBiz.id) : [];
+  });
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [isBlockTimeModalOpen, setIsBlockTimeModalOpen] = useState(false);
 

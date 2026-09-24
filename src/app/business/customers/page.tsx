@@ -16,8 +16,17 @@ import {
 } from 'lucide-react';
 
 export default function BusinessCustomersPage() {
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [customers, setCustomers] = useState<CustomerProfile[]>([]);
+  const [business, setBusiness] = useState<Business | null>(() => {
+    const all = store.getAllBusinessesAdmin();
+    const u = store.getCurrentUser();
+    return u?.businessId ? store.getBusinessById(u.businessId) || all[0] : all[0];
+  });
+  const [customers, setCustomers] = useState<CustomerProfile[]>(() => {
+    const all = store.getAllBusinessesAdmin();
+    const u = store.getCurrentUser();
+    const activeBiz = u?.businessId ? store.getBusinessById(u.businessId) || all[0] : all[0];
+    return activeBiz ? store.getCustomersByBusinessId(activeBiz.id) : [];
+  });
   const [searchQuery, setSearchQuery] = useState('');
 
   const refreshData = () => {

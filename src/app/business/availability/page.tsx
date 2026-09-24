@@ -17,9 +17,18 @@ import {
 } from 'lucide-react';
 
 export default function BusinessAvailabilityPage() {
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [schedule, setSchedule] = useState<DaySchedule[]>([]);
-  const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
+  const getInitialBiz = () => {
+    const user = store.getCurrentUser();
+    const allBiz = store.getAllBusinessesAdmin();
+    return user.businessId ? store.getBusinessById(user.businessId) || allBiz[0] : allBiz[0];
+  };
+
+  const [business, setBusiness] = useState<Business | null>(getInitialBiz);
+  const [schedule, setSchedule] = useState<DaySchedule[]>(() => getInitialBiz()?.schedule || []);
+  const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>(() => {
+    const biz = getInitialBiz();
+    return biz ? store.getBlockedTimesByBusinessId(biz.id) : [];
+  });
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
 

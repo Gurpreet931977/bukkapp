@@ -15,16 +15,22 @@ export default function CategoryPage() {
   const router = useRouter();
   const slug = params?.slug as string;
 
-  const [category, setCategory] = useState<Category | null>(null);
-  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [category, setCategory] = useState<Category | null>(() => {
+    return INITIAL_CATEGORIES.find((c) => c.slug === slug) || null;
+  });
+
+  const [businesses, setBusinesses] = useState<Business[]>(() => {
+    const cat = INITIAL_CATEGORIES.find((c) => c.slug === slug);
+    return cat ? store.getBusinesses({ category: cat.id }) : [];
+  });
+
   const [selectedNeighborhood, setSelectedNeighborhood] = useState('All Areas');
 
   useEffect(() => {
     const cat = INITIAL_CATEGORIES.find((c) => c.slug === slug);
     if (cat) {
       setCategory(cat);
-      const bizList = store.getBusinesses({ category: cat.id });
-      setBusinesses(bizList);
+      setBusinesses(store.getBusinesses({ category: cat.id }));
     }
   }, [slug]);
 

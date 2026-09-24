@@ -11,6 +11,8 @@ import {
   Clock,
   X,
   Zap,
+  Check,
+  Star,
   CheckCircle2,
   QrCode,
   ShieldCheck,
@@ -93,19 +95,20 @@ interface CategoryDockItem {
   Icon: LucideIcon;
   status: string;
   query: string;
+  categorySlug: string;
 }
 
 const CATEGORY_DOCK: CategoryDockItem[] = [
-  { label: 'Pickleball', Icon: Activity, status: '4 venues', query: 'pickleball' },
-  { label: 'Salons', Icon: Scissors, status: '12 open', query: 'haircut' },
-  { label: 'Dentists', Icon: Stethoscope, status: 'Verified', query: 'dentist' },
-  { label: 'Plumbers', Icon: Wrench, status: '60-min', query: 'plumber' },
-  { label: 'Carpenters', Icon: Hammer, status: 'Expert', query: 'furniture repair' },
-  { label: 'Tailors', Icon: Scissors, status: 'Express', query: 'tailor' },
-  { label: 'Appliances', Icon: Cpu, status: 'Doorstep', query: 'washing machine' },
-  { label: 'AC Service', Icon: Wind, status: 'Same-day', query: 'ac repair' },
-  { label: 'Pet Care', Icon: HeartPulse, status: 'Available', query: 'pet grooming' },
-  { label: 'Detailing', Icon: CarFront, status: 'Top rated', query: 'detailing' },
+  { label: 'Pickleball', Icon: Activity, status: '4 venues', query: 'pickleball', categorySlug: 'fitness-sports' },
+  { label: 'Salons', Icon: Scissors, status: '12 open', query: 'haircut', categorySlug: 'beauty-grooming' },
+  { label: 'Dentists', Icon: Stethoscope, status: 'Verified', query: 'dentist', categorySlug: 'health-wellness' },
+  { label: 'Plumbers', Icon: Wrench, status: '60-min', query: 'plumber', categorySlug: 'plumbing-sanitary' },
+  { label: 'Carpenters', Icon: Hammer, status: 'Expert', query: 'furniture repair', categorySlug: 'furniture-carpentry' },
+  { label: 'Tailors', Icon: Scissors, status: 'Express', query: 'tailor', categorySlug: 'tailoring-boutique' },
+  { label: 'Appliances', Icon: Cpu, status: 'Doorstep', query: 'washing machine', categorySlug: 'appliance-repair' },
+  { label: 'AC Service', Icon: Wind, status: 'Same-day', query: 'ac repair', categorySlug: 'home-services' },
+  { label: 'Pet Care', Icon: HeartPulse, status: 'Available', query: 'pet grooming', categorySlug: 'pet-care' },
+  { label: 'Detailing', Icon: CarFront, status: 'Top rated', query: 'detailing', categorySlug: 'auto-care' },
 ];
 
 export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: HeroSectionProps) {
@@ -169,6 +172,8 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const isPointerDownRef = useRef(false);
   const isHoveredRef = useRef(false);
   const startXRef = useRef(0);
+  const pointerDownPosRef = useRef({ x: 0, y: 0 });
+  const dragDistanceRef = useRef(0);
   const startScrollLeftRef = useRef(0);
   const hasDraggedRef = useRef(false);
   const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -207,22 +212,13 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
 
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // Ignore if pointer capture not supported
-    }
-
-    // If tapping while coasting with momentum, absorb momentum immediately like iOS/Android
-    if (Math.abs(momentumVelocityRef.current) > 15) {
-      hasDraggedRef.current = true;
-    } else {
-      hasDraggedRef.current = false;
-    }
+    // Do NOT capture pointer on pointerdown; that blocks child button onClick events
     momentumVelocityRef.current = 0;
-
     isPointerDownRef.current = true;
+    hasDraggedRef.current = false;
+    dragDistanceRef.current = 0;
     startXRef.current = e.clientX;
+    pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
     startScrollLeftRef.current = dockScrollRef.current?.scrollLeft || 0;
     scrollAccumulatorRef.current = startScrollLeftRef.current;
     pointerHistoryRef.current = [{ time: performance.now(), x: e.clientX }];
@@ -233,15 +229,28 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isPointerDownRef.current || !dockScrollRef.current) return;
 
+    const deltaX = e.clientX - startXRef.current;
+    const deltaY = e.clientY - pointerDownPosRef.current.y;
+    const dist = Math.hypot(deltaX, deltaY);
+    dragDistanceRef.current = dist;
+
+    // Only initiate drag scroll if user moved > 6px
+    if (dist > 6) {
+      hasDraggedRef.current = true;
+      try {
+        if (!e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }
+      } catch {
+        // Ignore
+      }
+    } else {
+      return;
+    }
+
     const now = performance.now();
     pointerHistoryRef.current.push({ time: now, x: e.clientX });
-    // Keep recent 100ms of pointer motion for exact release velocity
     pointerHistoryRef.current = pointerHistoryRef.current.filter((p) => now - p.time <= 100);
-
-    const deltaX = e.clientX - startXRef.current;
-    if (Math.abs(deltaX) > 4) {
-      hasDraggedRef.current = true;
-    }
 
     let targetScroll = startScrollLeftRef.current - deltaX;
     const setWidth = firstSetRef.current?.offsetWidth || 0;
@@ -274,37 +283,46 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
 
     if (isPointerDownRef.current) {
       isPointerDownRef.current = false;
-      if (dockScrollRef.current) {
-        scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
-      }
 
-      // Calculate release velocity from recent pointer trajectory
-      const now = performance.now();
-      const history = pointerHistoryRef.current.filter((p) => now - p.time <= 100);
-      if (history.length >= 2) {
-        const oldest = history[0];
-        const newest = history[history.length - 1];
-        const dt = (newest.time - oldest.time) / 1000;
-        // User must have moved recently (< 70ms before release) to carry momentum
-        if (dt > 0.015 && now - newest.time < 70) {
-          const dx = newest.x - oldest.x;
-          // Swiping left (dx < 0) advances forward (positive scrollLeft velocity)
-          const rawV = -dx / dt;
-          if (Math.abs(rawV) > 35) {
-            // High-capacity kinetic velocity cap with natural 1.25x flick responsiveness
-            const MAX_VELOCITY = 4500;
-            momentumVelocityRef.current = Math.sign(rawV) * Math.min(MAX_VELOCITY, Math.abs(rawV) * 1.25);
+      // If the user actually dragged, calculate release velocity
+      if (hasDraggedRef.current && dragDistanceRef.current > 6) {
+        if (dockScrollRef.current) {
+          scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
+        }
+
+        const now = performance.now();
+        const history = pointerHistoryRef.current.filter((p) => now - p.time <= 100);
+        if (history.length >= 2) {
+          const oldest = history[0];
+          const newest = history[history.length - 1];
+          const dt = (newest.time - oldest.time) / 1000;
+          if (dt > 0.015 && now - newest.time < 70) {
+            const dx = newest.x - oldest.x;
+            const rawV = -dx / dt;
+            if (Math.abs(rawV) > 35) {
+              const MAX_VELOCITY = 4500;
+              momentumVelocityRef.current = Math.sign(rawV) * Math.min(MAX_VELOCITY, Math.abs(rawV) * 1.25);
+            } else {
+              momentumVelocityRef.current = 0;
+            }
           } else {
             momentumVelocityRef.current = 0;
           }
         } else {
           momentumVelocityRef.current = 0;
         }
+
+        setTimeout(() => {
+          hasDraggedRef.current = false;
+          dragDistanceRef.current = 0;
+        }, 120);
       } else {
+        // Direct tap or click: momentum is 0, hasDraggedRef is false
         momentumVelocityRef.current = 0;
+        hasDraggedRef.current = false;
+        dragDistanceRef.current = 0;
       }
 
-      // If no momentum was imparted, schedule auto-slide resume; otherwise inertia loop will schedule it once force is utilised
       if (Math.abs(momentumVelocityRef.current) < 8 && !isHoveredRef.current) {
         resumeAutoSlide(1400);
       }
@@ -351,9 +369,13 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     }
   };
 
-  const handleCategoryItemClick = (catQuery: string) => {
-    if (hasDraggedRef.current) return;
-    handlePromptClick(catQuery);
+  const handleCategoryItemClick = (cat: CategoryDockItem) => {
+    if (hasDraggedRef.current || dragDistanceRef.current > 6) return;
+    if (cat.categorySlug) {
+      router.push(`/category/${cat.categorySlug}`);
+    } else {
+      handlePromptClick(cat.query);
+    }
   };
 
   // Continuous, gentle slow auto-slide RAF loop with momentum inertia physics & time-delta
@@ -506,17 +528,16 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
           >
             {/* Header: Live Confirmed Radar Pill + Rating */}
             <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-neutral-100">
-              <div className="flex items-center gap-1.5">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <div className="inline-flex items-center gap-1.5 bg-brand-lime/20 border border-brand-lime/70 text-brand-black px-2.5 py-1 rounded-full shadow-2xs">
+                <span className="w-3.5 h-3.5 rounded-full bg-brand-black text-brand-lime flex items-center justify-center shrink-0 shadow-2xs">
+                  <Check className="w-2.5 h-2.5 stroke-[3.5]" />
                 </span>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
+                <span className="text-[10px] font-black uppercase tracking-wider text-brand-black">
                   Confirmed 2m ago
                 </span>
               </div>
-              <span className="text-[10px] font-bold text-amber-900 flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/80">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+              <span className="text-[10px] font-bold text-brand-black flex items-center gap-1 bg-brand-surface-alt px-2.5 py-1 rounded-full border border-brand-border/80 shadow-2xs">
+                <Star className="w-2.5 h-2.5 fill-brand-black text-brand-black shrink-0" />
                 <span>4.9</span>
                 <span className="text-neutral-400 font-normal">(184)</span>
               </span>
@@ -535,9 +556,11 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <h4 className="text-xs font-black text-brand-black truncate">Zenith Pickleball Club</h4>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-brand-lime text-brand-black shrink-0 shadow-2xs" title="Verified Venue">
+                    <Check className="w-2.5 h-2.5 stroke-[3.5]" />
+                  </span>
                 </div>
                 <p className="text-[11px] font-semibold text-neutral-700 mt-0.5">Court 1 · 6:00 PM Today</p>
                 <p className="text-[10px] text-neutral-400 flex items-center gap-1 mt-0.5">
@@ -576,17 +599,16 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
           >
             {/* Header: Next Open Slot Radar Pill + Rating */}
             <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-neutral-100">
-              <div className="flex items-center gap-1.5">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <div className="inline-flex items-center gap-1.5 bg-brand-lime/20 border border-brand-lime/70 text-brand-black px-2.5 py-1 rounded-full shadow-2xs">
+                <span className="w-3.5 h-3.5 rounded-full bg-brand-black text-brand-lime flex items-center justify-center shrink-0 shadow-2xs">
+                  <Zap className="w-2.5 h-2.5 fill-brand-lime stroke-[1]" />
                 </span>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
+                <span className="text-[10px] font-black uppercase tracking-wider text-brand-black">
                   Next Open Slot
                 </span>
               </div>
-              <span className="text-[10px] font-bold text-amber-900 flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/80">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+              <span className="text-[10px] font-bold text-brand-black flex items-center gap-1 bg-brand-surface-alt px-2.5 py-1 rounded-full border border-brand-border/80 shadow-2xs">
+                <Star className="w-2.5 h-2.5 fill-brand-black text-brand-black shrink-0" />
                 <span>4.9</span>
                 <span className="text-neutral-400 font-normal">(148)</span>
               </span>
@@ -605,9 +627,11 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <h4 className="text-xs font-black text-brand-black truncate">The Groom Room</h4>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-brand-lime text-brand-black shrink-0 shadow-2xs" title="Verified Specialist">
+                    <Check className="w-2.5 h-2.5 stroke-[3.5]" />
+                  </span>
                 </div>
                 <p className="text-[11px] font-semibold text-neutral-700 mt-0.5">Today at 4:30 PM</p>
                 <p className="text-[10px] text-neutral-400 flex items-center gap-1 mt-0.5">
@@ -942,8 +966,10 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                         <button
                           key={`set-${setIdx}-${cat.label}-${idx}`}
                           type="button"
-                          onClick={() => handleCategoryItemClick(cat.query)}
-                          className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-left transition-all duration-200 hover:bg-neutral-100/90 active:scale-95 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none"
+                          onClick={() => handleCategoryItemClick(cat)}
+                          className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-left transition-all duration-200 hover:bg-neutral-100/90 active:scale-95 active:bg-brand-lime/30 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none"
+                          title={`Explore ${cat.label} in Dehradun`}
+                          aria-label={`Explore ${cat.label} category in Dehradun`}
                         >
                           <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-brand-lime/40 transition-all pointer-events-none">
                             <CatIcon className="w-4 h-4 text-neutral-800 group-hover:text-brand-black transition-colors" strokeWidth={1.8} />
@@ -1007,8 +1033,8 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 rounded-full bg-brand-lime live-pulse-dot" />
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-lime/20 border border-brand-lime/40 text-brand-lime mb-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-brand-lime" />
                 <span className="text-[10px] font-black uppercase tracking-wider text-brand-lime">
                   Verified Booking Pass
                 </span>
@@ -1038,7 +1064,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                   <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
                     Scheduled Slot
                   </span>
-                  <span className="font-black text-emerald-600 mt-0.5 block">
+                  <span className="font-black text-brand-black mt-0.5 block">
                     Today · 6:00 PM to 7:00 PM
                   </span>
                 </div>
@@ -1054,8 +1080,10 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                   <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
                     Payment Status
                   </span>
-                  <span className="font-black text-brand-black mt-0.5 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span className="font-black text-brand-black mt-0.5 flex items-center gap-1.5">
+                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-brand-lime text-brand-black shrink-0">
+                      <Check className="w-2 h-2 stroke-[3.5]" />
+                    </span>
                     <span>₹600 Paid via UPI</span>
                   </span>
                 </div>

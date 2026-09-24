@@ -17,8 +17,14 @@ import {
 } from 'lucide-react';
 
 export default function BusinessSettingsPage() {
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
+  const getInitialBiz = () => {
+    const user = store.getCurrentUser();
+    const allBiz = store.getAllBusinessesAdmin();
+    return user.businessId ? store.getBusinessById(user.businessId) || allBiz[0] : allBiz[0];
+  };
+
+  const [business, setBusiness] = useState<Business | null>(getInitialBiz);
+  const [isPaused, setIsPaused] = useState(() => !getInitialBiz()?.active);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [verificationFeedback, setVerificationFeedback] = useState<string | null>(null);
 
