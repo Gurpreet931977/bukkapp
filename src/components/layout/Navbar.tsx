@@ -165,11 +165,21 @@ export function Navbar() {
 
           {/* RIGHT: Actions & Authentication */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Crazy, Creative, Modern Search Omnibar */}
+            {/* Minimal Mobile Search Icon Button (< sm) */}
             <button
               type="button"
               onClick={() => setIsSearchPaletteOpen(true)}
-              className="group relative h-9 px-3 rounded-full bg-white hover:bg-neutral-50 border border-brand-border/90 hover:border-brand-black/60 shadow-2xs hover:shadow-subtle transition-all duration-200 flex items-center gap-2 text-xs text-neutral-500 hover:text-brand-black cursor-pointer overflow-hidden max-w-[130px] sm:max-w-[170px] md:max-w-[200px] lg:max-w-[230px]"
+              className="sm:hidden h-9 w-9 rounded-full bg-white hover:bg-neutral-50 active:scale-95 border border-brand-border/90 shadow-2xs flex items-center justify-center text-neutral-700 hover:text-brand-black transition-all cursor-pointer"
+              aria-label="Open search command palette"
+            >
+              <Search className="w-4 h-4 text-neutral-700" />
+            </button>
+
+            {/* Desktop / Tablet Search Omnibar (hidden on mobile, visible on sm+) */}
+            <button
+              type="button"
+              onClick={() => setIsSearchPaletteOpen(true)}
+              className="hidden sm:flex group relative h-9 px-3 rounded-full bg-white hover:bg-neutral-50 border border-brand-border/90 hover:border-brand-black/60 shadow-2xs hover:shadow-subtle transition-all duration-200 items-center gap-2 text-xs text-neutral-500 hover:text-brand-black cursor-pointer overflow-hidden sm:max-w-[170px] md:max-w-[200px] lg:max-w-[230px]"
               aria-label="Open search command palette (Command + K)"
             >
               {/* Shimmer sweep effect on hover */}
@@ -182,7 +192,7 @@ export function Navbar() {
               </div>
 
               {/* Kinetic Rotating Discovery Placeholder */}
-              <span className="truncate font-medium text-neutral-400 group-hover:text-neutral-700 transition-colors text-[11px] sm:text-xs select-none">
+              <span className="truncate font-medium text-neutral-400 group-hover:text-neutral-700 transition-colors text-xs select-none">
                 {NAV_PLACEHOLDERS[placeholderIndex]}
               </span>
 
@@ -208,7 +218,7 @@ export function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 p-1 pl-1.5 rounded-full bg-white hover:bg-brand-surface-alt border border-brand-border transition-all shadow-2xs focus:outline-hidden"
+                  className="flex items-center gap-1.5 sm:gap-2 p-1 sm:pl-1.5 rounded-full bg-white hover:bg-brand-surface-alt border border-brand-border transition-all shadow-2xs focus:outline-hidden"
                   aria-label="User profile menu"
                 >
                   <div className="w-7 h-7 rounded-full bg-brand-black text-white font-extrabold text-[11px] flex items-center justify-center">
@@ -225,7 +235,7 @@ export function Navbar() {
                   <span className="text-xs font-bold text-brand-black hidden sm:inline max-w-[100px] truncate">
                     {user.name.split(' ')[0]}
                   </span>
-                  <ChevronDown className="w-3 h-3 text-neutral-500 mr-1" />
+                  <ChevronDown className="w-3 h-3 text-neutral-500 mr-1 hidden sm:inline" />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -351,12 +361,12 @@ export function Navbar() {
                 )}
               </div>
             ) : (
-              /* Unauthenticated: Sign In & Register buttons with pixel-perfect alignment */
-              <div className="flex items-center gap-2">
+              /* Unauthenticated: Sign In & Register buttons (visible on sm+ / PC, tucked into drawer on mobile for minimal aesthetic) */
+              <div className="hidden sm:flex items-center gap-2">
                 <Link href="/login">
                   <button
                     type="button"
-                    className="h-9 px-3.5 sm:px-4 rounded-full border border-brand-border hover:border-brand-black bg-white hover:bg-neutral-50 text-xs font-bold text-brand-black shadow-2xs transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center"
+                    className="h-9 px-3.5 sm:px-4 rounded-full border border-brand-border hover:border-brand-black bg-white hover:bg-neutral-50 text-xs font-bold text-brand-black shadow-2xs transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center whitespace-nowrap"
                   >
                     Sign In
                   </button>
@@ -364,7 +374,7 @@ export function Navbar() {
                 <Link href="/signup">
                   <button
                     type="button"
-                    className="h-9 px-3.5 sm:px-4 rounded-full bg-brand-lime hover:bg-brand-lime-dark text-xs font-black text-brand-black shadow-2xs transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center"
+                    className="h-9 px-3.5 sm:px-4 rounded-full bg-brand-lime hover:bg-brand-lime-dark text-xs font-black text-brand-black shadow-2xs transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center whitespace-nowrap"
                   >
                     Get Started
                   </button>
@@ -375,7 +385,7 @@ export function Navbar() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden h-9 w-9 flex items-center justify-center text-brand-black bg-white hover:bg-brand-surface-alt border border-brand-border rounded-xl transition-colors active:scale-95 cursor-pointer"
+              className="lg:hidden h-9 w-9 flex items-center justify-center text-brand-black bg-white hover:bg-brand-surface-alt border border-brand-border rounded-full sm:rounded-xl transition-colors active:scale-95 cursor-pointer shadow-2xs"
               aria-label="Toggle Navigation"
             >
               {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}

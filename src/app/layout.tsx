@@ -135,7 +135,7 @@ export default function RootLayout({
           <AuthProvider>
             <ToastProvider>
               <Navbar />
-              <div className="flex-1 pb-16 md:pb-0">{children}</div>
+              <div className="flex-1 pb-20 md:pb-0">{children}</div>
               <Footer />
               <Suspense fallback={null}>
                 <MobileBottomNav />

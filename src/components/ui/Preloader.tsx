@@ -88,14 +88,25 @@ export function Preloader() {
           isExiting ? 'opacity-0 -translate-y-6 scale-95' : 'opacity-100 translate-y-0 scale-100'
         }`}
       >
-        {/* Kinetic Secondary Logomark Wrapper (proportional height, fixes invalid h-22) */}
-        <div className="relative w-24 h-[73px] min-[380px]:w-28 min-[380px]:h-[85px] sm:w-36 sm:h-28 md:w-40 md:h-32 flex items-center justify-center svg-mark-wrapper">
+        {/* Kinetic Secondary Logomark Wrapper (expanded clearance prevents any glow cropping) */}
+        <div className="relative w-[124px] h-[103px] min-[380px]:w-[140px] min-[380px]:h-[116px] sm:w-[176px] sm:h-[146px] md:w-[196px] md:h-[162px] flex items-center justify-center overflow-visible svg-mark-wrapper">
           <svg
-            viewBox="0 0 660 500"
-            className="w-full h-full overflow-visible drop-shadow-[0_0_18px_rgba(208,233,103,0.35)] sm:drop-shadow-[0_0_24px_rgba(208,233,103,0.35)]"
+            viewBox="-80 -100 820 680"
+            className="w-full h-full overflow-visible"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
+            <defs>
+              {/* Native SVG Gaussian glow filter - immune to WebKit texture box clipping */}
+              <filter id="preloader-neon-glow" x="-35%" y="-35%" width="170%" height="170%">
+                <feGaussianBlur stdDeviation="22" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
             {/* Layer 1: Electric Lime Highlighter Base Streak */}
             <path
               d="M 28 420 C 12 400 24 380 44 372 C 120 340 240 310 360 280 C 475 250 565 224 624 219 C 642 218 653 232 648 248 C 640 274 624 300 592 324 C 512 384 380 430 250 460 C 146 484 76 498 48 486 C 24 476 12 450 28 420 Z"
@@ -103,7 +114,18 @@ export function Preloader() {
               className="svg-highlighter-streak"
             />
 
-            {/* Layer 2: Iconic Bold Checkmark Stroke */}
+            {/* Layer 2: Radiant Electric Lime Under-Glow Aura (Vector filter, 0% clipping risk) */}
+            <path
+              d="M 108 194 L 270 346 L 558 50"
+              stroke="#D0E967"
+              strokeWidth="154"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter="url(#preloader-neon-glow)"
+              className="svg-checkmark-stroke opacity-75 pointer-events-none"
+            />
+
+            {/* Layer 3: Iconic Bold Checkmark Stroke */}
             <path
               d="M 108 194 L 270 346 L 558 50"
               stroke="#FAFAF8"

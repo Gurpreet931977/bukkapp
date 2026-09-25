@@ -193,10 +193,11 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const isInteractingRef = useRef(false);
   const isPointerDownRef = useRef(false);
   const isHoveredRef = useRef(false);
-  const startXRef = useRef(0);
   const pointerDownPosRef = useRef({ x: 0, y: 0 });
+  const lastXRef = useRef(0);
+  const isIntentLockedRef = useRef(false);
+  const isHorizontalDragRef = useRef(false);
   const dragDistanceRef = useRef(0);
-  const startScrollLeftRef = useRef(0);
   const hasDraggedRef = useRef(false);
   const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const scrollAccumulatorRef = useRef(0);
@@ -234,16 +235,19 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
 
-    // Do NOT capture pointer on pointerdown; that blocks child button onClick events
     momentumVelocityRef.current = 0;
     isPointerDownRef.current = true;
+    isIntentLockedRef.current = false;
+    isHorizontalDragRef.current = false;
     hasDraggedRef.current = false;
     dragDistanceRef.current = 0;
-    startXRef.current = e.clientX;
     pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
-    startScrollLeftRef.current = dockScrollRef.current?.scrollLeft || 0;
-    scrollAccumulatorRef.current = startScrollLeftRef.current;
+    lastXRef.current = e.clientX;
     pointerHistoryRef.current = [{ time: performance.now(), x: e.clientX }];
+
+    if (dockScrollRef.current) {
+      scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
+    }
 
     pauseAutoSlide();
   };
@@ -251,83 +255,98 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isPointerDownRef.current || !dockScrollRef.current) return;
 
-    const deltaX = e.clientX - startXRef.current;
-    const deltaY = e.clientY - pointerDownPosRef.current.y;
-    const dist = Math.hypot(deltaX, deltaY);
-    dragDistanceRef.current = dist;
+    const totalDeltaX = e.clientX - pointerDownPosRef.current.x;
+    const totalDeltaY = e.clientY - pointerDownPosRef.current.y;
+    const totalDist = Math.hypot(totalDeltaX, totalDeltaY);
 
-    // Only initiate drag scroll if user moved > 6px
-    if (dist > 6) {
-      hasDraggedRef.current = true;
-      try {
-        if (!e.currentTarget.hasPointerCapture(e.pointerId)) {
-          e.currentTarget.setPointerCapture(e.pointerId);
+    // Intent detection: differentiate vertical page scroll from horizontal category drag
+    if (!isIntentLockedRef.current) {
+      if (totalDist < 6) return;
+
+      isIntentLockedRef.current = true;
+      if (Math.abs(totalDeltaY) > Math.abs(totalDeltaX)) {
+        // Vertical movement dominates -> let browser scroll page smoothly, release dock control
+        isHorizontalDragRef.current = false;
+        isPointerDownRef.current = false;
+        if (!isHoveredRef.current) {
+          resumeAutoSlide(1200);
         }
-      } catch {
-        // Ignore
+        return;
+      } else {
+        // Horizontal movement dominates -> user intends to drag the dock
+        isHorizontalDragRef.current = true;
+        hasDraggedRef.current = true;
+        // Pointer capture only on desktop mouse, never touch (prevents mobile WebKit touchcancel bugs)
+        if (e.pointerType === 'mouse') {
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {}
+        }
       }
-    } else {
-      return;
     }
 
-    const now = performance.now();
-    pointerHistoryRef.current.push({ time: now, x: e.clientX });
-    pointerHistoryRef.current = pointerHistoryRef.current.filter((p) => now - p.time <= 100);
+    if (!isHorizontalDragRef.current) return;
 
-    let targetScroll = startScrollLeftRef.current - deltaX;
+    hasDraggedRef.current = true;
+    dragDistanceRef.current = totalDist;
+
+    const dx = e.clientX - lastXRef.current;
+    lastXRef.current = e.clientX;
+
+    if (dx === 0) return;
+
+    // Direct incremental 1:1 physical tracking with zero desync jumps
+    let newScroll = dockScrollRef.current.scrollLeft - dx;
     const setWidth = firstSetRef.current?.offsetWidth || 0;
-
-    // Infinite wrapping during active drag: shifts startScrollLeftRef so user can drag indefinitely in either direction
     if (setWidth > 0) {
-      while (targetScroll >= setWidth * 3) {
-        targetScroll -= setWidth;
-        startScrollLeftRef.current -= setWidth;
-      }
-      while (targetScroll < setWidth * 2) {
-        targetScroll += setWidth;
-        startScrollLeftRef.current += setWidth;
-      }
+      while (newScroll >= setWidth * 3) newScroll -= setWidth;
+      while (newScroll < setWidth * 2) newScroll += setWidth;
     }
 
     isProgrammaticScrollRef.current = true;
-    dockScrollRef.current.scrollLeft = targetScroll;
-    scrollAccumulatorRef.current = targetScroll;
+    dockScrollRef.current.scrollLeft = newScroll;
+    scrollAccumulatorRef.current = newScroll;
+
+    const now = performance.now();
+    pointerHistoryRef.current.push({ time: now, x: e.clientX });
+    pointerHistoryRef.current = pointerHistoryRef.current.filter((p) => now - p.time <= 80);
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    try {
-      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      }
-    } catch {
-      // Ignore
+    if (e.pointerType === 'mouse') {
+      try {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+      } catch {}
     }
 
     if (isPointerDownRef.current) {
       isPointerDownRef.current = false;
 
-      // If the user actually dragged, calculate release velocity
-      if (hasDraggedRef.current && dragDistanceRef.current > 6) {
+      // If user dragged horizontally, calculate release velocity
+      if (hasDraggedRef.current && isHorizontalDragRef.current && dragDistanceRef.current > 6) {
         if (dockScrollRef.current) {
           scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
         }
 
         const now = performance.now();
-        const history = pointerHistoryRef.current.filter((p) => now - p.time <= 100);
+        const history = pointerHistoryRef.current.filter((p) => now - p.time <= 80);
         if (history.length >= 2) {
           const oldest = history[0];
           const newest = history[history.length - 1];
           const dt = (newest.time - oldest.time) / 1000;
-          if (dt > 0.015 && now - newest.time < 70) {
+          if (dt > 0.012 && now - newest.time < 60) {
             const dx = newest.x - oldest.x;
             const rawV = -dx / dt;
             if (Math.abs(rawV) > 35) {
-              const MAX_VELOCITY = 4500;
-              momentumVelocityRef.current = Math.sign(rawV) * Math.min(MAX_VELOCITY, Math.abs(rawV) * 1.25);
+              const MAX_VELOCITY = 3600;
+              momentumVelocityRef.current = Math.sign(rawV) * Math.min(MAX_VELOCITY, Math.abs(rawV) * 1.2);
             } else {
               momentumVelocityRef.current = 0;
             }
           } else {
+            // Held stationary before release -> zero momentum
             momentumVelocityRef.current = 0;
           }
         } else {
@@ -339,7 +358,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
           dragDistanceRef.current = 0;
         }, 120);
       } else {
-        // Direct tap or click: momentum is 0, hasDraggedRef is false
+        // Direct tap or click without dragging
         momentumVelocityRef.current = 0;
         hasDraggedRef.current = false;
         dragDistanceRef.current = 0;
@@ -363,11 +382,12 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   };
 
   const handleScroll = () => {
-    if (isProgrammaticScrollRef.current) {
+    // If pointer is held down or update is programmatic, ignore native scroll event
+    if (isPointerDownRef.current || isProgrammaticScrollRef.current) {
       isProgrammaticScrollRef.current = false;
       return;
     }
-    // Real user scroll (touch momentum, mouse wheel, or native trackpad swipe)
+
     pauseAutoSlide();
     if (dockScrollRef.current) {
       scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
@@ -418,6 +438,13 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
           container.scrollLeft = setWidth * 2;
           scrollAccumulatorRef.current = setWidth * 2;
           initialized = true;
+        }
+
+        // If user is actively touching/holding/dragging, freeze auto RAF updates completely
+        if (isPointerDownRef.current) {
+          lastTimestampRef.current = timestamp;
+          animationFrameId = requestAnimationFrame(loop);
+          return;
         }
 
         if (lastTimestampRef.current === null) {
@@ -990,6 +1017,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                           type="button"
                           onClick={() => handleCategoryItemClick(cat)}
                           className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-left transition-all duration-200 hover:bg-neutral-100/90 active:scale-95 active:bg-brand-lime/30 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none"
+                          style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
                           title={`Explore ${cat.label} in Dehradun`}
                           aria-label={`Explore ${cat.label} category in Dehradun`}
                         >
