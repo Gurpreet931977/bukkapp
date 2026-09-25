@@ -9,16 +9,40 @@ export function Preloader() {
   const [isExiting, setIsExiting] = useState(false);
   const [shouldRender, setShouldRender] = useState(true);
 
+  // Lock body scroll and overscroll on mobile/desktop while preloader is active to prevent scroll bleed
   useEffect(() => {
-    // Fast, crisp curtain-lift exit starts at 1150ms
+    if (pathname !== '/' || !shouldRender) return;
+
+    const originalOverflow = document.body.style.overflow;
+    const originalOverscroll = document.body.style.overscrollBehavior;
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.overscrollBehavior = originalOverscroll;
+    };
+  }, [pathname, shouldRender]);
+
+  useEffect(() => {
+    // Respect user's reduced-motion preference on mobile/desktop
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const delay = prefersReducedMotion ? 400 : 1150;
+    const transitionDuration = prefersReducedMotion ? 200 : 500;
+
+    // Fast, crisp curtain-lift exit starts at 1150ms (or 400ms for reduced-motion)
     const exitTimer = setTimeout(() => {
       setIsExiting(true);
 
-      // Unmount cleanly after curtain lift completes (500ms)
+      // Unmount cleanly after curtain lift completes
       setTimeout(() => {
         setShouldRender(false);
-      }, 500);
-    }, 1150);
+      }, transitionDuration);
+    }, delay);
 
     return () => {
       clearTimeout(exitTimer);
@@ -39,27 +63,36 @@ export function Preloader() {
   return (
     <div
       onClick={handleDismiss}
+      onTouchStart={handleDismiss}
+      role="status"
+      aria-label="Loading BUKKAPP"
       style={{
         zIndex: 9999999,
         transform: isExiting ? 'translate3d(0, -100%, 0)' : 'translate3d(0, 0, 0)',
         willChange: 'transform',
+        WebkitBackfaceVisibility: 'hidden',
+        backfaceVisibility: 'hidden',
       }}
-      className="fixed inset-0 h-screen h-[100dvh] w-screen w-[100dvw] bg-[#0F0F0E] flex flex-col items-center justify-center select-none cursor-pointer overflow-hidden px-4 sm:px-6 pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] rounded-b-[28px] sm:rounded-b-[44px] md:rounded-b-[60px] border-b border-[#D0E967]/30 shadow-[0_20px_50px_rgba(0,0,0,0.85)] transition-transform duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] touch-none"
+      className={`fixed inset-0 h-screen h-[100dvh] w-screen w-[100dvw] bg-[#0F0F0E] flex flex-col items-center justify-center select-none cursor-pointer overflow-hidden px-4 sm:px-6 transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] touch-none ${
+        isExiting
+          ? 'rounded-b-[28px] sm:rounded-b-[44px] md:rounded-b-[60px] border-b border-[#D0E967]/35 shadow-[0_20px_50px_rgba(0,0,0,0.85)]'
+          : 'rounded-b-none border-b-0 shadow-none'
+      }`}
     >
       {/* Background Ambient Spotlight in Electric Chartreuse (responsively scaled for mobile up to 4K) */}
-      <div className="absolute w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[480px] lg:h-[480px] rounded-full bg-[#D0E967]/12 blur-3xl pointer-events-none" />
+      <div className="absolute w-56 h-56 min-[380px]:w-64 min-[380px]:h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[480px] lg:h-[480px] rounded-full bg-[#D0E967]/12 blur-3xl pointer-events-none transform-gpu" />
 
       {/* Motion Graphic Logo & Brand Container (smoothly dissolves during curtain lift) */}
       <div
-        className={`relative z-10 flex flex-col items-center space-y-4 sm:space-y-5 md:space-y-6 will-change-transform transition-all duration-300 ease-out ${
+        className={`relative z-10 flex flex-col items-center space-y-3.5 min-[380px]:space-y-4 sm:space-y-5 md:space-y-6 will-change-transform transition-all duration-300 ease-out ${
           isExiting ? 'opacity-0 -translate-y-6 scale-95' : 'opacity-100 translate-y-0 scale-100'
         }`}
       >
-        {/* Kinetic Secondary Logomark Wrapper (responsive width/height scaling) */}
-        <div className="relative w-28 h-22 sm:w-36 sm:h-28 md:w-40 md:h-32 flex items-center justify-center svg-mark-wrapper">
+        {/* Kinetic Secondary Logomark Wrapper (proportional height, fixes invalid h-22) */}
+        <div className="relative w-24 h-[73px] min-[380px]:w-28 min-[380px]:h-[85px] sm:w-36 sm:h-28 md:w-40 md:h-32 flex items-center justify-center svg-mark-wrapper">
           <svg
             viewBox="0 0 660 500"
-            className="w-full h-full drop-shadow-[0_0_24px_rgba(208,233,103,0.35)]"
+            className="w-full h-full overflow-visible drop-shadow-[0_0_18px_rgba(208,233,103,0.35)] sm:drop-shadow-[0_0_24px_rgba(208,233,103,0.35)]"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
@@ -88,11 +121,11 @@ export function Preloader() {
             src="/logos/primary-wordmark-dark.png"
             alt="BUKKAPP"
             width={160}
-            height={36}
-            className="h-6 sm:h-7 md:h-8 w-auto object-contain mx-auto"
+            height={40}
+            className="h-5 min-[380px]:h-6 sm:h-7 md:h-8 w-auto object-contain mx-auto"
             priority
           />
-          <p className="text-[9px] sm:text-[10px] md:text-[11px] font-bold text-neutral-400 tracking-widest uppercase">
+          <p className="text-[9px] min-[380px]:text-[9.5px] sm:text-[10px] md:text-[11px] font-bold text-neutral-300 sm:text-neutral-400 tracking-[0.2em] sm:tracking-widest uppercase">
             Universal Local Booking
           </p>
         </div>
