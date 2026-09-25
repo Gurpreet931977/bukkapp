@@ -194,6 +194,10 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const isPointerDownRef = useRef(false);
   const isHoveredRef = useRef(false);
   const pointerDownPosRef = useRef({ x: 0, y: 0 });
+  const pointerDownTimeRef = useRef(0);
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isHoldRef = useRef(false);
+  const suppressClickRef = useRef(false);
   const lastXRef = useRef(0);
   const isIntentLockedRef = useRef(false);
   const isHorizontalDragRef = useRef(false);
@@ -235,12 +239,18 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
 
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+
     momentumVelocityRef.current = 0;
     isPointerDownRef.current = true;
     isIntentLockedRef.current = false;
     isHorizontalDragRef.current = false;
     hasDraggedRef.current = false;
+    isHoldRef.current = false;
     dragDistanceRef.current = 0;
+
+    pointerDownTimeRef.current = performance.now();
     pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
     lastXRef.current = e.clientX;
     pointerHistoryRef.current = [{ time: performance.now(), x: e.clientX }];
@@ -250,33 +260,47 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     }
 
     pauseAutoSlide();
+
+    // Hold detection: if user presses & holds stationary for > 200ms, mark as intentional pause/inspect
+    holdTimerRef.current = setTimeout(() => {
+      if (isPointerDownRef.current && dragDistanceRef.current < 8) {
+        isHoldRef.current = true;
+      }
+    }, 200);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isPointerDownRef.current || !dockScrollRef.current) return;
 
-    const totalDeltaX = e.clientX - pointerDownPosRef.current.x;
-    const totalDeltaY = e.clientY - pointerDownPosRef.current.y;
-    const totalDist = Math.hypot(totalDeltaX, totalDeltaY);
+    const deltaX = e.clientX - pointerDownPosRef.current.x;
+    const deltaY = e.clientY - pointerDownPosRef.current.y;
+    const totalDist = Math.hypot(deltaX, deltaY);
+    dragDistanceRef.current = totalDist;
 
     // Intent detection: differentiate vertical page scroll from horizontal category drag
     if (!isIntentLockedRef.current) {
-      if (totalDist < 6) return;
+      // Allow an 8px deadzone for natural thumb placement before committing direction
+      if (totalDist < 8) return;
 
       isIntentLockedRef.current = true;
-      if (Math.abs(totalDeltaY) > Math.abs(totalDeltaX)) {
+      if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) {
         // Vertical movement dominates -> let browser scroll page smoothly, release dock control
         isHorizontalDragRef.current = false;
         isPointerDownRef.current = false;
+        isHoldRef.current = false;
+        if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
         if (!isHoveredRef.current) {
           resumeAutoSlide(1200);
         }
         return;
       } else {
-        // Horizontal movement dominates -> user intends to drag the dock
+        // Horizontal movement dominates -> user intends to slide/drag categories
         isHorizontalDragRef.current = true;
         hasDraggedRef.current = true;
-        // Pointer capture only on desktop mouse, never touch (prevents mobile WebKit touchcancel bugs)
+        isHoldRef.current = false;
+        if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+
+        // Pointer capture on desktop mouse only
         if (e.pointerType === 'mouse') {
           try {
             e.currentTarget.setPointerCapture(e.pointerId);
@@ -288,24 +312,27 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     if (!isHorizontalDragRef.current) return;
 
     hasDraggedRef.current = true;
-    dragDistanceRef.current = totalDist;
 
     const dx = e.clientX - lastXRef.current;
     lastXRef.current = e.clientX;
 
     if (dx === 0) return;
 
-    // Direct incremental 1:1 physical tracking with zero desync jumps
-    let newScroll = dockScrollRef.current.scrollLeft - dx;
+    // Direct incremental 1:1 physical tracking on the accumulator
+    scrollAccumulatorRef.current -= dx;
+
     const setWidth = firstSetRef.current?.offsetWidth || 0;
     if (setWidth > 0) {
-      while (newScroll >= setWidth * 3) newScroll -= setWidth;
-      while (newScroll < setWidth * 2) newScroll += setWidth;
+      while (scrollAccumulatorRef.current >= setWidth * 3) {
+        scrollAccumulatorRef.current -= setWidth;
+      }
+      while (scrollAccumulatorRef.current < setWidth * 2) {
+        scrollAccumulatorRef.current += setWidth;
+      }
     }
 
     isProgrammaticScrollRef.current = true;
-    dockScrollRef.current.scrollLeft = newScroll;
-    scrollAccumulatorRef.current = newScroll;
+    dockScrollRef.current.scrollLeft = scrollAccumulatorRef.current;
 
     const now = performance.now();
     pointerHistoryRef.current.push({ time: now, x: e.clientX });
@@ -321,11 +348,37 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
       } catch {}
     }
 
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+
     if (isPointerDownRef.current) {
       isPointerDownRef.current = false;
 
+      const touchDuration = performance.now() - pointerDownTimeRef.current;
+      const wasHold = isHoldRef.current || (touchDuration >= 200 && dragDistanceRef.current < 8);
+
+      if (wasHold) {
+        // User held to pause/inspect the ticker: suppress any accidental click navigation
+        suppressClickRef.current = true;
+        setTimeout(() => {
+          suppressClickRef.current = false;
+        }, 300);
+        momentumVelocityRef.current = 0;
+        if (!isHoveredRef.current) {
+          resumeAutoSlide(1200);
+        }
+        return;
+      }
+
       // If user dragged horizontally, calculate release velocity
-      if (hasDraggedRef.current && isHorizontalDragRef.current && dragDistanceRef.current > 6) {
+      if (hasDraggedRef.current && isHorizontalDragRef.current && dragDistanceRef.current >= 8) {
+        suppressClickRef.current = true;
+        setTimeout(() => {
+          suppressClickRef.current = false;
+        }, 300);
+
         if (dockScrollRef.current) {
           scrollAccumulatorRef.current = dockScrollRef.current.scrollLeft;
         }
@@ -336,12 +389,12 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
           const oldest = history[0];
           const newest = history[history.length - 1];
           const dt = (newest.time - oldest.time) / 1000;
-          if (dt > 0.012 && now - newest.time < 60) {
+          if (dt > 0.012 && now - newest.time < 50) {
             const dx = newest.x - oldest.x;
             const rawV = -dx / dt;
-            if (Math.abs(rawV) > 35) {
-              const MAX_VELOCITY = 3600;
-              momentumVelocityRef.current = Math.sign(rawV) * Math.min(MAX_VELOCITY, Math.abs(rawV) * 1.2);
+            if (Math.abs(rawV) > 40) {
+              const MAX_VELOCITY = 2400;
+              momentumVelocityRef.current = Math.sign(rawV) * Math.min(MAX_VELOCITY, Math.abs(rawV));
             } else {
               momentumVelocityRef.current = 0;
             }
@@ -356,7 +409,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
         setTimeout(() => {
           hasDraggedRef.current = false;
           dragDistanceRef.current = 0;
-        }, 120);
+        }, 150);
       } else {
         // Direct tap or click without dragging
         momentumVelocityRef.current = 0;
@@ -367,6 +420,26 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
       if (Math.abs(momentumVelocityRef.current) < 8 && !isHoveredRef.current) {
         resumeAutoSlide(1400);
       }
+    }
+  };
+
+  const handlePointerCancel = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    isPointerDownRef.current = false;
+    isHorizontalDragRef.current = false;
+    hasDraggedRef.current = false;
+    isHoldRef.current = false;
+    momentumVelocityRef.current = 0; // Never fling on cancel!
+    suppressClickRef.current = true;
+    setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 200);
+
+    if (!isHoveredRef.current) {
+      resumeAutoSlide(1000);
     }
   };
 
@@ -412,7 +485,14 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
   };
 
   const handleCategoryItemClick = (cat: CategoryDockItem) => {
-    if (hasDraggedRef.current || dragDistanceRef.current > 6) return;
+    if (
+      hasDraggedRef.current ||
+      dragDistanceRef.current >= 8 ||
+      isHoldRef.current ||
+      suppressClickRef.current
+    ) {
+      return;
+    }
     if (cat.categorySlug) {
       router.push(`/category/${cat.categorySlug}`);
     } else {
@@ -458,7 +538,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
           scrollAccumulatorRef.current += momentumVelocityRef.current * dt;
 
           // Silky exponential deceleration friction (natural physics decay: preserves momentum until force is utilised)
-          const friction = Math.pow(0.978, dt * 60);
+          const friction = Math.pow(0.95, dt * 60);
           momentumVelocityRef.current *= friction;
 
           // Seamless infinite wrap check during inertia coasting
@@ -513,6 +593,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
     return () => {
       cancelAnimationFrame(animationFrameId);
       if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
     };
   }, []);
 
@@ -969,6 +1050,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
           <div className="pt-2 w-full max-w-4xl mx-auto flex justify-center px-2 sm:px-4">
             <div
               className="relative w-full max-w-full overflow-hidden rounded-full bg-white/95 backdrop-blur-xl border border-neutral-200/80 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-1.5 select-none"
+              onContextMenu={(e) => e.preventDefault()}
               onMouseEnter={() => {
                 isHoveredRef.current = true;
                 pauseAutoSlide();
@@ -989,7 +1071,8 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                onPointerCancel={handlePointerUp}
+                onPointerCancel={handlePointerCancel}
+                onContextMenu={(e) => e.preventDefault()}
                 onWheel={handleWheel}
                 onScroll={handleScroll}
                 className="relative w-full overflow-x-auto no-scrollbar flex items-center cursor-grab active:cursor-grabbing select-none py-0.5"
@@ -1000,6 +1083,7 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                   touchAction: 'pan-y',
                   userSelect: 'none',
                   WebkitUserSelect: 'none',
+                  WebkitTouchCallout: 'none',
                 }}
               >
                 {[0, 1, 2, 3, 4].map((setIdx) => (
@@ -1016,8 +1100,9 @@ export function HeroSection({ currentLocation = 'Dehradun', onOpenLocation }: He
                           key={`set-${setIdx}-${cat.label}-${idx}`}
                           type="button"
                           onClick={() => handleCategoryItemClick(cat)}
-                          className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-left transition-all duration-200 hover:bg-neutral-100/90 active:scale-95 active:bg-brand-lime/30 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none"
+                          className="group shrink-0 flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-left transition-colors duration-150 hover:bg-neutral-100/90 active:bg-neutral-100/80 cursor-pointer border border-transparent hover:border-neutral-200/70 select-none touch-manipulation"
                           style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
+                          draggable={false}
                           title={`Explore ${cat.label} in Dehradun`}
                           aria-label={`Explore ${cat.label} category in Dehradun`}
                         >
