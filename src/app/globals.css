@@ -238,11 +238,12 @@ select:focus-visible {
 .leaflet-container img.leaflet-tile {
   max-width: none !important;
   max-height: none !important;
-  width: 256px !important;
-  height: 256px !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+}
+
+/* Ensure unloaded/broken tiles never flash browser broken-image placeholder icons */
+.leaflet-container img.leaflet-tile:not(.leaflet-tile-loaded) {
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
 
 .leaflet-pane,

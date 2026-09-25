@@ -28,6 +28,7 @@ import { store } from '@/lib/db/store';
 import { Business, User } from '@/types';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { useBottomSheetDrag } from '@/hooks/useBottomSheetDrag';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 
 interface BusinessLayoutProps {
@@ -47,6 +48,16 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const {
+    sheetRef: moreSheetRef,
+    backdropRef: moreBackdropRef,
+    dragHandleProps: moreDragHandleProps,
+    dismissWithAnimation: dismissMoreMenu,
+  } = useBottomSheetDrag({
+    onClose: () => setIsMobileMoreOpen(false),
+    isOpen: isMobileMoreOpen,
+  });
 
   // Lock body scroll and prevent Lenis hijacking when mobile menu sheet is open
   useEffect(() => {
@@ -304,16 +315,47 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
           data-lenis-prevent
           className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs md:hidden overscroll-contain"
         >
-          <div className="absolute inset-0" onClick={() => setIsMobileMoreOpen(false)} />
           <div
+            ref={moreBackdropRef}
+            className="absolute inset-0 transition-opacity"
+            onClick={dismissMoreMenu}
+          />
+          <div
+            ref={moreSheetRef}
             data-lenis-prevent
-            className="relative w-full bg-white rounded-t-3xl border-t border-brand-border p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-modal animate-slide-up space-y-4 overscroll-contain"
+            className="relative w-full bg-white rounded-t-3xl border-t border-brand-border p-5 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-modal animate-slide-up space-y-3 overscroll-contain will-change-transform"
           >
-            <div className="flex items-center justify-between pb-2 border-b border-brand-border">
-              <h3 className="font-extrabold text-base text-brand-black">Business Console Menu</h3>
+            {/* Mobile Pull / Drag Indicator */}
+            <div
+              {...moreDragHandleProps}
+              className="w-full flex items-center justify-center pt-1 pb-2 cursor-grab active:cursor-grabbing select-none group touch-none shrink-0"
+              role="button"
+              tabIndex={0}
+              aria-label="Drag down or tap to close"
+              title="Drag down or tap to close"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  dismissMoreMenu();
+                }
+              }}
+            >
+              <div className="w-12 h-1.5 rounded-full bg-neutral-300 group-hover:bg-neutral-400 group-active:bg-neutral-500 transition-colors" />
+            </div>
+
+            <div
+              {...moreDragHandleProps}
+              className="flex items-center justify-between pb-2 border-b border-brand-border cursor-grab active:cursor-grabbing select-none touch-none"
+            >
+              <h3 className="font-extrabold text-base text-brand-black pointer-events-none">Business Console Menu</h3>
               <button
-                onClick={() => setIsMobileMoreOpen(false)}
-                className="w-8 h-8 rounded-full bg-brand-surface-alt flex items-center justify-center text-neutral-500 tap-target"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dismissMoreMenu();
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="w-8 h-8 rounded-full bg-brand-surface-alt flex items-center justify-center text-neutral-500 tap-target cursor-pointer pointer-events-auto"
+                aria-label="Close menu"
               >
                 <X className="w-4 h-4" />
               </button>

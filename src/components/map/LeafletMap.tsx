@@ -194,26 +194,38 @@ export function LeafletMap({
 
       mapInstanceRef.current = map;
 
-      // Primary CartoDB Voyager tiles (clean, high-contrast, zero rate limits)
-      const primaryTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19,
-      });
+      // Primary: Esri WorldStreetMap (enterprise CDN, zero ad-blocker domain issues, highly detailed cartography)
+      const primaryTiles = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+        {
+          attribution:
+            '&copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> &mdash; StreetMap',
+          maxZoom: 19,
+          errorTileUrl:
+            'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22256%22%20height%3D%22256%22%20viewBox%3D%220%200%20256%20256%22%3E%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22%23EAEAE4%22%2F%3E%3C%2Fsvg%3E',
+        }
+      );
 
-      // Reliable OpenStreetMap fallback if CartoDB experiences ad-blocker or network issues
+      // Reliable OpenStreetMap France fallback if primary experiences any network issue
       let fallbackTriggered = false;
-      primaryTiles.on('tileerror', () => {
+      const handleTileError = () => {
         if (!fallbackTriggered && !isDisposed && mapInstanceRef.current) {
           fallbackTriggered = true;
-          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
-            maxZoom: 19,
-          }).addTo(mapInstanceRef.current);
+          try {
+            const fallbackTiles = L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+              attribution:
+                '&copy; OpenStreetMap France | &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
+              subdomains: 'abc',
+              maxZoom: 19,
+              errorTileUrl:
+                'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22256%22%20height%3D%22256%22%20viewBox%3D%220%200%20256%20256%22%3E%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22%23EAEAE4%22%2F%3E%3C%2Fsvg%3E',
+            });
+            fallbackTiles.addTo(mapInstanceRef.current);
+          } catch (e) {}
         }
-      });
+      };
 
+      primaryTiles.on('tileerror', handleTileError);
       primaryTiles.addTo(map);
 
       // Immediately synchronize markers onto the map instance
@@ -244,6 +256,14 @@ export function LeafletMap({
 
     initMap();
 
+    // Invalidate map whenever window is resized
+    const handleWindowResize = () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    };
+    window.addEventListener('resize', handleWindowResize);
+
     // ResizeObserver ensures map always adapts to split container resize without grey clipping
     const resizeObserver = new ResizeObserver(() => {
       if (mapInstanceRef.current) {
@@ -258,6 +278,7 @@ export function LeafletMap({
     return () => {
       isDisposed = true;
       timers.forEach(clearTimeout);
+      window.removeEventListener('resize', handleWindowResize);
       resizeObserver.disconnect();
       if (mapInstanceRef.current) {
         try {
@@ -344,7 +365,7 @@ export function LeafletMap({
     <div
       className={`relative rounded-3xl overflow-hidden border border-brand-border/80 shadow-card bg-[#EAEAE4] ${className}`}
     >
-      <div ref={mapContainerRef} className="w-full h-full min-h-[350px]" />
+      <div ref={mapContainerRef} className="w-full h-full min-h-[220px]" />
 
       {/* Floating Header Badge (Bottom Left) */}
       <div className="absolute bottom-4 left-3 z-[400] pointer-events-none">

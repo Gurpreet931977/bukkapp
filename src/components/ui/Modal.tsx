@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBottomSheetDrag } from '@/hooks/useBottomSheetDrag';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -21,9 +22,14 @@ export function Modal({
   children,
   maxWidth = 'lg',
 }: ModalProps) {
+  const { sheetRef, backdropRef, dragHandleProps, dismissWithAnimation } = useBottomSheetDrag({
+    onClose,
+    isOpen,
+  });
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') dismissWithAnimation();
     };
 
     if (isOpen) {
@@ -46,7 +52,7 @@ export function Modal({
       }
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, dismissWithAnimation]);
 
   if (!isOpen) return null;
 
@@ -67,35 +73,57 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
+        ref={backdropRef}
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-200"
-        onClick={onClose}
+        onClick={dismissWithAnimation}
       />
 
       {/* Modal Dialog / Bottom Sheet on Mobile */}
       <div
+        ref={sheetRef}
         data-lenis-prevent
         className={cn(
-          'relative w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-modal border-t sm:border border-brand-border/80 overflow-hidden z-10 animate-slide-up sm:animate-slide-down flex flex-col max-h-[90vh] sm:max-h-[calc(100vh-4rem)] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:pb-0 overscroll-contain',
+          'relative w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-modal border-t sm:border border-brand-border/80 overflow-hidden z-10 animate-slide-up sm:animate-slide-down flex flex-col max-h-[90vh] sm:max-h-[calc(100vh-4rem)] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:pb-0 overscroll-contain will-change-transform',
           maxWidths[maxWidth]
         )}
       >
         {/* Mobile Pull / Drag Indicator */}
-        <div className="sm:hidden flex justify-center pt-2.5 pb-1">
-          <div className="w-10 h-1 rounded-full bg-neutral-300" />
+        <div
+          {...dragHandleProps}
+          className="sm:hidden w-full flex items-center justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing select-none group touch-none shrink-0"
+          role="button"
+          tabIndex={0}
+          aria-label="Drag down or tap to close"
+          title="Drag down or tap to close"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              dismissWithAnimation();
+            }
+          }}
+        >
+          <div className="w-12 h-1.5 rounded-full bg-neutral-300 group-hover:bg-neutral-400 group-active:bg-neutral-500 transition-colors" />
         </div>
 
         {/* Header */}
         {(title || description) && (
-          <div className="px-5 sm:px-6 pt-3 sm:pt-6 pb-3 sm:pb-4 border-b border-brand-border/60 flex items-start justify-between gap-4 shrink-0">
-            <div>
+          <div
+            {...dragHandleProps}
+            className="px-5 sm:px-6 pt-1 sm:pt-6 pb-3 sm:pb-4 border-b border-brand-border/60 flex items-start justify-between gap-4 shrink-0 sm:cursor-default cursor-grab active:cursor-grabbing select-none touch-none sm:touch-auto"
+          >
+            <div className="pointer-events-none">
               {title && <h3 className="text-lg sm:text-xl font-bold text-brand-black tracking-tight">{title}</h3>}
               {description && (
                 <p className="text-xs sm:text-sm text-brand-secondary mt-0.5 sm:mt-1">{description}</p>
               )}
             </div>
             <button
-              onClick={onClose}
-              className="p-1.5 text-neutral-400 hover:text-brand-black rounded-lg hover:bg-brand-surface-alt transition-colors shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                dismissWithAnimation();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="p-1.5 text-neutral-400 hover:text-brand-black rounded-lg hover:bg-brand-surface-alt transition-colors shrink-0 cursor-pointer pointer-events-auto"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
@@ -105,8 +133,12 @@ export function Modal({
 
         {!title && !description && (
           <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-20 p-2 text-neutral-400 hover:text-brand-black bg-white/80 rounded-full hover:bg-brand-surface-alt transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              dismissWithAnimation();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="absolute top-4 right-4 z-20 p-2 text-neutral-400 hover:text-brand-black bg-white/80 rounded-full hover:bg-brand-surface-alt transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />

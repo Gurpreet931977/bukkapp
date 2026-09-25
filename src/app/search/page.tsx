@@ -215,7 +215,7 @@ function SearchPageContent() {
         {viewMode === 'split' ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* List column */}
-            <div className="lg:col-span-7 space-y-4 max-h-[750px] overflow-y-auto pr-1">
+            <div className="lg:col-span-7 space-y-4 lg:max-h-[calc(100vh-12rem)] lg:overflow-y-auto pr-1">
               {businesses.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {businesses.map((biz) => (
@@ -233,13 +233,13 @@ function SearchPageContent() {
               )}
             </div>
 
-            {/* Sticky Map Column - prominently placed on top on mobile, right-hand on desktop */}
-            <div className="lg:col-span-5 order-first lg:order-last sticky top-36 sm:top-44 z-10">
+            {/* Flexible Map Column - responsive height, sticks cleanly on desktop without cropping */}
+            <div className="lg:col-span-5 order-first lg:order-last relative lg:sticky lg:top-36 z-10">
               <LeafletMap
                 businesses={businesses}
                 selectedBusinessId={selectedBusinessId}
                 onSelectBusiness={(biz) => setSelectedBusinessId(biz.id)}
-                className="h-[360px] sm:h-[460px] lg:h-[620px] w-full"
+                className="h-[40vh] min-h-[260px] max-h-[380px] sm:h-[46vh] sm:max-h-[460px] lg:h-[calc(100vh-12rem)] lg:min-h-[420px] lg:max-h-[calc(100vh-10.5rem)] w-full"
               />
             </div>
           </div>

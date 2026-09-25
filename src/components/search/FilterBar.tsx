@@ -6,6 +6,7 @@ import { INITIAL_CATEGORIES, DEHRADUN_NEIGHBORHOODS } from '@/lib/seed/data';
 import { Filter, Check, SlidersHorizontal, RotateCcw, X, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { useBottomSheetDrag } from '@/hooks/useBottomSheetDrag';
 
 interface FilterBarProps {
   filters: SearchFilters;
@@ -16,6 +17,16 @@ interface FilterBarProps {
 
 export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBarProps) {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+  const {
+    sheetRef: filterSheetRef,
+    backdropRef: filterBackdropRef,
+    dragHandleProps: filterDragHandleProps,
+    dismissWithAnimation: dismissFilterDrawer,
+  } = useBottomSheetDrag({
+    onClose: () => setIsMobileDrawerOpen(false),
+    isOpen: isMobileDrawerOpen,
+  });
 
   // Lock body scroll and prevent Lenis hijacking when mobile filter drawer is open
   useEffect(() => {
@@ -201,22 +212,40 @@ export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBar
           className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs sm:hidden overscroll-contain"
         >
           <div
-            className="absolute inset-0"
-            onClick={() => setIsMobileDrawerOpen(false)}
+            ref={filterBackdropRef}
+            className="absolute inset-0 transition-opacity"
+            onClick={dismissFilterDrawer}
           />
 
           <div
+            ref={filterSheetRef}
             data-lenis-prevent
-            className="relative w-full max-h-[85vh] bg-white rounded-t-3xl border-t border-brand-border flex flex-col shadow-modal animate-slide-up overflow-hidden overscroll-contain"
+            className="relative w-full max-h-[85vh] bg-white rounded-t-3xl border-t border-brand-border flex flex-col shadow-modal animate-slide-up overflow-hidden overscroll-contain will-change-transform"
           >
             {/* Mobile Pull / Drag Indicator */}
-            <div className="flex justify-center pt-2.5 pb-1">
-              <div className="w-10 h-1 rounded-full bg-neutral-300" />
+            <div
+              {...filterDragHandleProps}
+              className="w-full flex items-center justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing select-none group touch-none shrink-0"
+              role="button"
+              tabIndex={0}
+              aria-label="Drag down or tap to close"
+              title="Drag down or tap to close"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  dismissFilterDrawer();
+                }
+              }}
+            >
+              <div className="w-12 h-1.5 rounded-full bg-neutral-300 group-hover:bg-neutral-400 group-active:bg-neutral-500 transition-colors" />
             </div>
 
             {/* Drawer Header */}
-            <div className="px-4 py-3 border-b border-brand-border/70 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div
+              {...filterDragHandleProps}
+              className="px-4 py-2.5 border-b border-brand-border/70 flex items-center justify-between cursor-grab active:cursor-grabbing select-none touch-none"
+            >
+              <div className="flex items-center gap-2 pointer-events-none">
                 <SlidersHorizontal className="w-4 h-4 text-brand-black" />
                 <h3 className="font-extrabold text-base text-brand-black">Filters & Sorting</h3>
                 {activeFilterCount > 0 && (
@@ -226,8 +255,12 @@ export function FilterBar({ filters, onChange, onReset, resultCount }: FilterBar
                 )}
               </div>
               <button
-                onClick={() => setIsMobileDrawerOpen(false)}
-                className="w-8 h-8 rounded-full bg-brand-surface-alt flex items-center justify-center text-neutral-500 hover:text-brand-black tap-target"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dismissFilterDrawer();
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="w-8 h-8 rounded-full bg-brand-surface-alt flex items-center justify-center text-neutral-500 hover:text-brand-black tap-target cursor-pointer pointer-events-auto"
                 aria-label="Close filters"
               >
                 <X className="w-4 h-4" />
